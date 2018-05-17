@@ -6,6 +6,8 @@
 //
 
 
+
+
 protocol Serializer : Storable {
     var fields: [Field] { get }
     var resources: [Resource] { get }
@@ -14,6 +16,9 @@ protocol Serializer : Storable {
     var storeId: String { get }
     
     init()
+    
+    
+//    func makeFields(store: Store)
 }
 
 

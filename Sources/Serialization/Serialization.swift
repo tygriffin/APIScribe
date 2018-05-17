@@ -29,7 +29,7 @@ class Serialization : Encodable {
         store[serializer.storeKey] = dict
         
         for resource in serializer.resources {
-            let resourceSerializer = resource.value.makeSerializer().topSerializer
+            let resourceSerializer = resource.value.internalSerializer()
             if !store.isAlreadySerialized(key: resourceSerializer.storeKey, id: resourceSerializer.storeId) {
                 gather(serializer: resourceSerializer)
             }

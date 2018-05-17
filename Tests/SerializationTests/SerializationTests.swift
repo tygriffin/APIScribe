@@ -18,13 +18,20 @@ struct Creation {
 // Serializable Extensions
 //
 extension CertificateBundle : Serializable {
-    typealias Model = CertificateBundle
-    typealias ModelSerializer = CertificateBundleSerializer
+    func makeSerializer() -> CertificateBundleSerializer {
+        var s = CertificateBundleSerializer()
+        s.model = self
+        return s
+    }
 }
 
 extension Creation : Serializable {
-    typealias Model = Creation
-    typealias ModelSerializer = CreationSerializer
+
+    func makeSerializer() -> CreationSerializer {
+        var s = CreationSerializer()
+        s.model = self
+        return s
+    }
 }
 
 class User {
@@ -34,7 +41,7 @@ class User {
 //
 // Serializers
 //
-final class CertificateBundleSerializer : ModelSerializerr {
+final class CertificateBundleSerializer : Serializer {
     static var type: StorableType = .certificateBundle
     var model = CertificateBundle()
     var storeId: String { return model.reference }
@@ -51,9 +58,10 @@ final class CertificateBundleSerializer : ModelSerializerr {
     var resources = [
         Resource(Creation(registrationCode: "regcode", passed: 3)),
     ]
+
 }
 
-final class CreationSerializer : ModelSerializerr {
+final class CreationSerializer : Serializer {
     
     static var type: StorableType = .creation
     var model = Creation()
@@ -81,7 +89,9 @@ final class SerializationTests: XCTestCase {
         do {
             
             let cb = CertificateBundle(reference: "ref", quantity: 34)
-            let s = cb.makeSerializer()
+            
+            
+            let s = cb.makeSerialization()
             
 
             let jsonEncoder = JSONEncoder()

@@ -6,32 +6,21 @@
 //
 
 protocol CanMakeSerializer {
-    func makeSerializer() -> Serialization
-}
-
-protocol ModelSerializerr: Serializer {
-    associatedtype Model
-    var model: Model { get set }
-    
-    init(model: Any)
-}
-
-extension ModelSerializerr {
-    init(model: Any) {
-        self.init()
-        if let model = model as? Model {
-            self.model = model
-        }
-    }
+    func internalSerializer() -> Serializer
 }
 
 protocol Serializable : CanMakeSerializer {
-    associatedtype ModelSerializer: ModelSerializerr
-    associatedtype Model
+    associatedtype ModelSerializer: Serializer
+    
+    func makeSerializer() -> ModelSerializer
 }
 
 extension Serializable {
-    func makeSerializer() -> Serialization {
-        return Serialization(topSerializer: ModelSerializer(model: self))
+    func makeSerialization() -> Serialization {
+        return Serialization(topSerializer: makeSerializer())
+    }
+    
+    func internalSerializer() -> Serializer {
+        return makeSerializer()
     }
 }
