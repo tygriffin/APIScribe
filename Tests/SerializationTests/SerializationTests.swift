@@ -41,6 +41,7 @@ extension Creation : Serializable {
     }
 }
 
+
 //
 // Serializers
 //
@@ -53,10 +54,18 @@ final class CertificateBundleSerializer : Serializer {
     }
     
     func makeFields(builder: inout FieldBuilder) {
-        builder.add("reference", model.reference)
+        builder.add(
+            "reference",
+            model.reference,
+            { self.model.reference = $0 }
+        )
         
         if includeQuantity {
-            builder.add("quantity", model.quantity)
+            builder.add(
+                "quantity",
+                model.quantity,
+                { self.model.quantity = $0 }
+            )
         }
     }
     
@@ -65,11 +74,19 @@ final class CertificateBundleSerializer : Serializer {
     var storeId: String { return model.reference }
 }
 
-final class CreationSerializer : Serializer {
+final class CreationSerializer : Serializer, Deserializer {
  
     func makeFields(builder: inout FieldBuilder) {
-        builder.add("registrationCode", model.registrationCode)
-        builder.add("passed", model.passed)
+        builder.add(
+            "registrationCode",
+            model.registrationCode,
+            { self.model.registrationCode = $0 }
+        )
+        builder.add(
+            "passed",
+            model.passed,
+            { self.model.passed = $0 }
+        )
     }
     
     static var type: StorableType = .creation
@@ -79,7 +96,20 @@ final class CreationSerializer : Serializer {
 
 final class SerializationTests: XCTestCase {
     
-    func testExample() {
+    func testDeserialization() throws {
+        let json = """
+            {
+                "registrationCode": "newregcode",
+                "passed": 7
+            }
+            """.data(using: .utf8)!
+        
+        let creation = try JSONDecoder().decode(CreationSerializer.self, from: json).model
+        XCTAssertEqual(creation.registrationCode, "newregcode")
+        XCTAssertEqual(creation.passed, 7)
+    }
+    
+    func testSerialization() {
         
         do {
             
@@ -89,7 +119,6 @@ final class SerializationTests: XCTestCase {
             serializer.includeQuantity = false
             
             let s = serializer.makeSerialization()
-            
 
             let jsonEncoder = JSONEncoder()
             let json = try jsonEncoder.encode(s)
@@ -108,7 +137,7 @@ final class SerializationTests: XCTestCase {
     }
 
 
-    static var allTests = [
-        ("testExample", testExample),
-    ]
+//    static var allTests = [
+//        // TODO
+//    ]
 }

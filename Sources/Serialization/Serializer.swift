@@ -8,11 +8,17 @@
 struct FieldBuilder {
     var fields: [Field] = []
     
-    mutating func add(_ key: String, _ value: String) {
-        fields.append(Field(key: key, value))
+    mutating func add(_ key: String, _ value: String, _ decoder: @escaping (String) -> Void) {
+        var field = Field(key: key)
+        field.stringValue = value
+        field.stringDecode = decoder
+        fields.append(field)
     }
-    mutating func add(_ key: String, _ value: Int) {
-        fields.append(Field(key: key, value))
+    mutating func add(_ key: String, _ value: Int, _ decoder: @escaping (Int) -> Void) {
+        var field = Field(key: key)
+        field.intValue = value
+        field.intDecode = decoder
+        fields.append(field)
     }
 }
 

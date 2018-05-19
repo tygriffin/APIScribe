@@ -9,18 +9,14 @@ struct Field : Encodable {
     var key: String
     
     var stringValue: String?
+    var stringDecode: ((String) -> Void)?
     var intValue: Int?
+    var intDecode: ((Int) -> Void)?
     
     var shouldEncode = true
     
-    init(key: String, _ value: @autoclosure () -> String) {
+    init(key: String) {
         self.key = key
-        self.stringValue = value()
-    }
-    
-    init(key: String, _ value: @autoclosure () -> Int) {
-        self.key = key
-        self.intValue = value()
     }
     
     func encode(to encoder: Encoder) throws {
