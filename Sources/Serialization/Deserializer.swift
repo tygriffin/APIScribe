@@ -8,7 +8,7 @@
 protocol Deserializer : Decodable {
     associatedtype Model
     var model: Model { get }
-    func makeFields(builder: inout FieldBuilder)
+    func makeFields(builder: inout FieldBuilder<Model>)
     init()
 }
 
@@ -18,7 +18,7 @@ extension Deserializer {
         
         let container = try decoder.container(keyedBy: DynamicKey.self)
         
-        var builder = FieldBuilder()
+        var builder = FieldBuilder<Model>(model: model)
         makeFields(builder: &builder)
         for field in builder.fields {
             if let d = field.stringDecode {

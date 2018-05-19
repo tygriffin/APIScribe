@@ -18,7 +18,12 @@ struct CertificateBundle {
 
 struct Creation {
     var registrationCode: String = ""
-    var passed : Int = 0
+    var passed: Int = 0
+    var failed: Int = 0
+    
+    func total() -> Int {
+        return passed + failed
+    }
 }
 
 //
@@ -33,7 +38,6 @@ extension CertificateBundle : Serializable {
 }
 
 extension Creation : Serializable {
-
     func makeSerializer() -> CreationSerializer {
         let s = CreationSerializer()
         s.model = self
@@ -45,7 +49,7 @@ extension Creation : Serializable {
 //
 // Serializers
 //
-final class CertificateBundleSerializer : Serializer {
+final class CertificateBundleSerializer : ModelSerializer {
     
     var includeQuantity = true
     
@@ -53,19 +57,11 @@ final class CertificateBundleSerializer : Serializer {
         builder.add(model.creations())
     }
     
-    func makeFields(builder: inout FieldBuilder) {
-        builder.add(
-            "reference",
-            model.reference,
-            { self.model.reference = $0 }
-        )
+    func makeFields(builder: inout FieldBuilder<CertificateBundle>) {
+        builder.add("reference", \.reference)
         
         if includeQuantity {
-            builder.add(
-                "quantity",
-                model.quantity,
-                { self.model.quantity = $0 }
-            )
+            builder.add("quantity", \.quantity)
         }
     }
     
@@ -74,19 +70,12 @@ final class CertificateBundleSerializer : Serializer {
     var storeId: String { return model.reference }
 }
 
-final class CreationSerializer : Serializer, Deserializer {
+final class CreationSerializer : ModelSerializer, Deserializer {
  
-    func makeFields(builder: inout FieldBuilder) {
-        builder.add(
-            "registrationCode",
-            model.registrationCode,
-            { self.model.registrationCode = $0 }
-        )
-        builder.add(
-            "passed",
-            model.passed,
-            { self.model.passed = $0 }
-        )
+    func makeFields(builder: inout FieldBuilder<Creation>) {
+        builder.add("registrationCode", \.registrationCode)
+        builder.add("passed", \.passed)
+        builder.add("failed", \.failed)
     }
     
     static var type: StorableType = .creation
