@@ -24,11 +24,12 @@ class Serialization : Encodable {
     }
     
     private func gather(serializer: Serializer) {
-        var dict = Dictionary<String, Storable>.init()
-        dict[serializer.storeId] = serializer
-        store[serializer.storeKey] = dict
+        store.add(serializer: serializer)
         
-        for resource in serializer.resources {
+        var builder = SideLoadedResourceBuilder()
+        serializer.sideLoadResources(builder: &builder)
+        for resource in builder.resources {
+            // TODO: Alternatively, pass in a serializer here to use instead of default
             let resourceSerializer = resource.value.internalSerializer()
             if !store.isAlreadySerialized(key: resourceSerializer.storeKey, id: resourceSerializer.storeId) {
                 gather(serializer: resourceSerializer)

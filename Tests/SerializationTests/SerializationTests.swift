@@ -7,6 +7,13 @@ import XCTest
 struct CertificateBundle {
     var reference: String = ""
     var quantity: Int = 0
+    
+    func creations() -> [Creation] {
+        return [
+            Creation(registrationCode: "regcode", passed: 3),
+            Creation(registrationCode: "otherregcode", passed: 2)
+        ]
+    }
 }
 
 struct Creation {
@@ -19,7 +26,7 @@ struct Creation {
 //
 extension CertificateBundle : Serializable {
     func makeSerializer() -> CertificateBundleSerializer {
-        var s = CertificateBundleSerializer()
+        let s = CertificateBundleSerializer()
         s.model = self
         return s
     }
@@ -28,58 +35,46 @@ extension CertificateBundle : Serializable {
 extension Creation : Serializable {
 
     func makeSerializer() -> CreationSerializer {
-        var s = CreationSerializer()
+        let s = CreationSerializer()
         s.model = self
         return s
     }
-}
-
-class User {
-    var givenName: String = ""
 }
 
 //
 // Serializers
 //
 final class CertificateBundleSerializer : Serializer {
+    
+    var includeQuantity = true
+    
+    func sideLoadResources(builder: inout SideLoadedResourceBuilder) {
+        builder.add(model.creations())
+    }
+    
+    func makeFields(builder: inout FieldBuilder) {
+        builder.add("reference", model.reference)
+        
+        if includeQuantity {
+            builder.add("quantity", model.quantity)
+        }
+    }
+    
     static var type: StorableType = .certificateBundle
     var model = CertificateBundle()
     var storeId: String { return model.reference }
-    
-    var user: User = User()
-    
-    lazy var fields: [Field] = {
-        return [
-            Field(key: "reference", model.reference),
-            Field(key: "quantity", model.quantity),
-        ]
-    }()
-    
-    var resources = [
-        Resource(Creation(registrationCode: "regcode", passed: 3)),
-    ]
-
 }
 
 final class CreationSerializer : Serializer {
+ 
+    func makeFields(builder: inout FieldBuilder) {
+        builder.add("registrationCode", model.registrationCode)
+        builder.add("passed", model.passed)
+    }
     
     static var type: StorableType = .creation
     var model = Creation()
     var storeId: String { return model.registrationCode }
-    
-    lazy var fields: [Field] = {
-        return [
-            Field(
-                key: "registrationCode",
-                model.registrationCode
-            ),
-            Field(key: "passed", model.passed),
-        ]
-    }()
-    
-    var resources: [Resource] = [
-        Resource(Creation(registrationCode: "regcode", passed: 3)),
-    ]
 }
 
 final class SerializationTests: XCTestCase {
@@ -90,8 +85,10 @@ final class SerializationTests: XCTestCase {
             
             let cb = CertificateBundle(reference: "ref", quantity: 34)
             
+            let serializer = cb.makeSerializer()
+            serializer.includeQuantity = false
             
-            let s = cb.makeSerialization()
+            let s = serializer.makeSerialization()
             
 
             let jsonEncoder = JSONEncoder()

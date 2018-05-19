@@ -14,4 +14,16 @@ extension Dictionary where Key == String, Value == [String: Storable] {
             return k == key && v.contains(where: { _k, _ in _k == id })
         }
     }
+    
+    mutating func add(serializer: Serializer) {
+        
+        if self.index(forKey: serializer.storeKey) == nil {
+            var dict = Dictionary<String, Storable>.init()
+            dict[serializer.storeId] = serializer
+            self[serializer.storeKey] = dict
+        }
+        else {
+            self[serializer.storeKey]?[serializer.storeId] = serializer
+        }
+    }
 }
