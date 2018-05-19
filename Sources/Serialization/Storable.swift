@@ -5,8 +5,8 @@
 //  Created by Taylor Griffin on 12/5/18.
 //
 
-protocol Storable : Encodable {
-    static var type: StorableType { get }
+public protocol Storable : Encodable {
+    static var type: String { get }
 }
 
 struct DynamicKey : CodingKey {
@@ -16,17 +16,6 @@ struct DynamicKey : CodingKey {
     }
     var intValue: Int? { return nil }
     init?(intValue: Int) { return nil }
-}
-
-enum StorableType : String, Codable {
-    case certificateBundle, creation
-    
-    // TODO: Do I need this?
-//    var metatype: Storable.Type {
-//        switch self {
-//        case .certificateBundle: return CertificateBundleSerializer.self
-//        }
-//    }
 }
 
 struct AnyStorable : Encodable {

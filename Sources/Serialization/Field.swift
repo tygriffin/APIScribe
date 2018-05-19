@@ -25,13 +25,3 @@ struct Field : Encodable {
         if let v = intValue { try container.encode(v) }
     }
 }
-
-struct Resource {
-    var value: CanMakeSerializer
-    
-    var shouldEncode = true
-    
-    init(_ value: CanMakeSerializer) {
-        self.value = value
-    }
-}

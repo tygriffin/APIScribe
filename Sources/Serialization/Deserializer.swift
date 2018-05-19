@@ -5,9 +5,9 @@
 //  Created by Taylor Griffin on 19/5/18.
 //
 
-protocol Deserializer : Decodable {
+public protocol Deserializer : Decodable {
     associatedtype Model
-    var model: Model { get }
+    var model: Model { get set }
     func makeFields(builder: inout FieldBuilder<Model>)
     init()
 }
@@ -22,11 +22,17 @@ extension Deserializer {
         makeFields(builder: &builder)
         for field in builder.fields {
             if let d = field.stringDecode {
-                d(try container.decode(String.self, forKey: DynamicKey(stringValue: field.key)!))
+                if let v = try container.decodeIfPresent(String.self, forKey: DynamicKey(stringValue: field.key)!) {
+                    d(v)
+                }
             }
             if let d = field.intDecode {
-                d(try container.decode(Int.self, forKey: DynamicKey(stringValue: field.key)!))
+                if let v = try container.decodeIfPresent(Int.self, forKey: DynamicKey(stringValue: field.key)!) {
+                    d(v)
+                }
             }
         }
+        
+        model = builder.model
     }
 }

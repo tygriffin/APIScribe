@@ -1,15 +1,21 @@
+//
+//  Serialization.swift
+//  Serialization
+//
+//  Created by Taylor Griffin on 13/5/18.
+//
 
-class Serialization : Encodable {
+public class Serialization : Encodable {
     
-    init(topSerializer: Serializer) {
+    init(topSerializer: InternalSerializer) {
         self.topSerializer = topSerializer
     }
     
-    var topSerializer: Serializer
+    var topSerializer: InternalSerializer
     
     var store: Store = [:]
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         
         gather(serializer: topSerializer)
         
@@ -23,7 +29,7 @@ class Serialization : Encodable {
         }
     }
     
-    private func gather(serializer: Serializer) {
+    private func gather(serializer: InternalSerializer) {
         store.add(serializer: serializer)
         
         var builder = SideLoadedResourceBuilder()
@@ -31,7 +37,7 @@ class Serialization : Encodable {
         for resource in builder.resources {
             // TODO: Alternatively, pass in a serializer here to use instead of default
             let resourceSerializer = resource.value.internalSerializer()
-            if !store.isAlreadySerialized(key: resourceSerializer.storeKey, id: resourceSerializer.storeId) {
+            if !store.isAlreadySerialized(key: resourceSerializer.storeKey, id: resourceSerializer.storeIdString) {
                 gather(serializer: resourceSerializer)
             }
         }

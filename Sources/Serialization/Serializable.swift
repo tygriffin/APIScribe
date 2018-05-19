@@ -6,11 +6,11 @@
 //
 
 protocol CanMakeSerializer {
-    func internalSerializer() -> Serializer
+    func internalSerializer() -> InternalSerializer
 }
 
 protocol Serializable : CanMakeSerializer {
-    associatedtype ModelSerializer: Serializer
+    associatedtype ModelSerializer: InternalSerializer
     
     func makeSerializer() -> ModelSerializer
 }
@@ -20,7 +20,7 @@ extension Serializable {
         return Serialization(topSerializer: makeSerializer())
     }
     
-    func internalSerializer() -> Serializer {
+    func internalSerializer() -> InternalSerializer {
         return makeSerializer()
     }
 }

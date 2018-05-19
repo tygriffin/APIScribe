@@ -10,8 +10,8 @@ struct CertificateBundle {
     
     func creations() -> [Creation] {
         return [
-            Creation(registrationCode: "regcode", passed: 3),
-            Creation(registrationCode: "otherregcode", passed: 2)
+            Creation(registrationCode: "regcode", passed: 3, failed: 1),
+            Creation(registrationCode: "otherregcode", passed: 2, failed: 2)
         ]
     }
 }
@@ -31,17 +31,13 @@ struct Creation {
 //
 extension CertificateBundle : Serializable {
     func makeSerializer() -> CertificateBundleSerializer {
-        let s = CertificateBundleSerializer()
-        s.model = self
-        return s
+        return CertificateBundleSerializer(model: self)
     }
 }
 
 extension Creation : Serializable {
     func makeSerializer() -> CreationSerializer {
-        let s = CreationSerializer()
-        s.model = self
-        return s
+        return CreationSerializer(model: self)
     }
 }
 
@@ -49,8 +45,7 @@ extension Creation : Serializable {
 //
 // Serializers
 //
-final class CertificateBundleSerializer : ModelSerializer {
-    
+final class CertificateBundleSerializer : Serializer {
     var includeQuantity = true
     
     func sideLoadResources(builder: inout SideLoadedResourceBuilder) {
@@ -65,12 +60,12 @@ final class CertificateBundleSerializer : ModelSerializer {
         }
     }
     
-    static var type: StorableType = .certificateBundle
+    static var type = "certificateBundle"
     var model = CertificateBundle()
-    var storeId: String { return model.reference }
+    var storeId = \CertificateBundle.reference
 }
 
-final class CreationSerializer : ModelSerializer, Deserializer {
+final class CreationSerializer : Serializer, Deserializer {
  
     func makeFields(builder: inout FieldBuilder<Creation>) {
         builder.add("registrationCode", \.registrationCode)
@@ -78,9 +73,9 @@ final class CreationSerializer : ModelSerializer, Deserializer {
         builder.add("failed", \.failed)
     }
     
-    static var type: StorableType = .creation
+    static var type = "creation"
     var model = Creation()
-    var storeId: String { return model.registrationCode }
+    var storeId = \Creation.registrationCode
 }
 
 final class SerializationTests: XCTestCase {
