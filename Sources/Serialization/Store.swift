@@ -15,15 +15,15 @@ extension Dictionary where Key == String, Value == [String: Storable] {
         }
     }
     
-    mutating func add(serializer: InternalSerializer) {
+    mutating func add(storable: Storable) {
         
-        if self.index(forKey: serializer.storeKey) == nil {
-            var dict = Dictionary<String, Storable>.init()
-            dict[serializer.storeIdString] = serializer
-            self[serializer.storeKey] = dict
+        if self.index(forKey: storable.storeKey) == nil {
+            var dict = Dictionary<String, Storable>()
+            dict[storable.storeIdString] = storable
+            self[storable.storeKey] = dict
         }
         else {
-            self[serializer.storeKey]?[serializer.storeIdString] = serializer
+            self[storable.storeKey]?[storable.storeIdString] = storable
         }
     }
 }

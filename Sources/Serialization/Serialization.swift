@@ -30,7 +30,7 @@ public class Serialization : Encodable {
     }
     
     private func gather(serializer: InternalSerializer) {
-        store.add(serializer: serializer)
+        store.add(storable: serializer)
         
         var builder = SideLoadedResourceBuilder()
         serializer.sideLoadResources(builder: &builder)

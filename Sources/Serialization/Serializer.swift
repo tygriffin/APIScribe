@@ -8,7 +8,7 @@
 public protocol Serializer : InternalSerializer {
     associatedtype Model
     var model: Model { get set }
-    var storeId: WritableKeyPath<Model, String> { get }
+    var storeId: KeyPath<Model, String> { get }
     func makeFields(builder: inout FieldBuilder<Model>)
     init(model: Model)
 }
@@ -34,9 +34,6 @@ extension Serializer {
 }
 
 public protocol InternalSerializer : Storable {
-    
-    var storeKey: String { get }
-    var storeIdString: String { get }
     
     init()
     

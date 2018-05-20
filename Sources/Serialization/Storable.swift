@@ -7,15 +7,8 @@
 
 public protocol Storable : Encodable {
     static var type: String { get }
-}
-
-struct DynamicKey : CodingKey {
-    var stringValue: String
-    init?(stringValue: String) {
-        self.stringValue = stringValue
-    }
-    var intValue: Int? { return nil }
-    init?(intValue: Int) { return nil }
+    var storeKey: String { get }
+    var storeIdString: String { get }
 }
 
 struct AnyStorable : Encodable {

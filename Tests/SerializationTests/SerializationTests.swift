@@ -2,42 +2,54 @@ import XCTest
 @testable import Serialization
 
 //
-// Primary Models
+// Models
 //
-struct CertificateBundle {
-    var reference: String = ""
-    var quantity: Int = 0
+struct Owner {
+    var storeId: String { return "\(id!)" }
+    var id: Int?
+    var name = ""
     
-    func creations() -> [Creation] {
+    func pets() -> [Pet] {
         return [
-            Creation(registrationCode: "regcode", passed: 3, failed: 1),
-            Creation(registrationCode: "otherregcode", passed: 2, failed: 2)
+            Pet(id: 1, type: .doggy, name: "Kathleen", age: 10, whiskers: true, adoptedAt: Date()),
+            Pet(id: 2, type: .kitty, name: "Miso", age: 3, whiskers: true, adoptedAt: nil)
         ]
     }
 }
 
-struct Creation {
-    var registrationCode: String = ""
-    var passed: Int = 0
-    var failed: Int = 0
+enum PetType : String {
+    case unknown
+    case doggy
+    case kitty
+}
+
+struct Pet {
+    var storeId: String { return "\(id!)" }
     
-    func total() -> Int {
-        return passed + failed
+    var id: Int?
+    var type: PetType = .unknown
+    var name = ""
+    var age = 0
+    var whiskers = false
+    var adoptedAt: Date?
+    
+    var landsOnAllFours: Bool {
+        return type == .kitty
     }
 }
 
 //
 // Serializable Extensions
 //
-extension CertificateBundle : Serializable {
-    func makeSerializer() -> CertificateBundleSerializer {
-        return CertificateBundleSerializer(model: self)
+extension Owner : Serializable {
+    func makeSerializer() -> OwnerSerializer {
+        return OwnerSerializer(model: self)
     }
 }
 
-extension Creation : Serializable {
-    func makeSerializer() -> CreationSerializer {
-        return CreationSerializer(model: self)
+extension Pet : Serializable {
+    func makeSerializer() -> PetSerializer {
+        return PetSerializer(model: self)
     }
 }
 
@@ -45,83 +57,153 @@ extension Creation : Serializable {
 //
 // Serializers
 //
-final class CertificateBundleSerializer : Serializer {
-    var includeQuantity = true
+final class OwnerSerializer : Serializer {
     
-    func sideLoadResources(builder: inout SideLoadedResourceBuilder) {
-        builder.add(model.creations())
+    var includeWhiskers = true
+    
+    func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
+        b.add(model.pets())
     }
     
-    func makeFields(builder: inout FieldBuilder<CertificateBundle>) {
-        builder.add("reference", \.reference)
-        
-        if includeQuantity {
-            builder.add("quantity", \.quantity)
-        }
+    func makeFields(builder b: inout FieldBuilder<Owner>) {
+        b.add("name", \.name)
     }
     
-    static var type = "certificateBundle"
-    var model = CertificateBundle()
-    var storeId = \CertificateBundle.reference
+    static var type = "owner"
+    var model = Owner()
+    var storeId = \Owner.storeId
 }
 
-final class CreationSerializer : Serializer, Deserializer {
+final class PetSerializer : Serializer, Deserializer {
  
-    func makeFields(builder: inout FieldBuilder<Creation>) {
-        builder.add("registrationCode", \.registrationCode)
-        builder.add("passed", \.passed)
-        builder.add("failed", \.failed)
+    func makeFields(builder b: inout FieldBuilder<Pet>) {
+        b.add("id", \.id)
+        b.add(
+            "type",
+            model.type.rawValue,
+            { self.model.type = PetType(rawValue: $0)! }
+        )
+        b.add("name", \.name)
+        b.add("age", \.age)
+        b.add("whiskers", \.whiskers)
+        b.add("adoptedAt", \.adoptedAt)
     }
     
-    static var type = "creation"
-    var model = Creation()
-    var storeId = \Creation.registrationCode
+    static var type = "pet"
+    var model = Pet()
+    var storeId = \Pet.storeId
 }
 
 final class SerializationTests: XCTestCase {
     
-    func testDeserialization() throws {
+    func testDeserializeFromPartialInput() throws {
+        // No need to pass entire serialized model. In this case `whiskers` is missing.
         let json = """
             {
-                "registrationCode": "newregcode",
-                "passed": 7
+                "id": 99,
+                "name": "Rover",
+                "type": "doggy",
+                "age": 2
             }
             """.data(using: .utf8)!
         
-        let creation = try JSONDecoder().decode(CreationSerializer.self, from: json).model
-        XCTAssertEqual(creation.registrationCode, "newregcode")
-        XCTAssertEqual(creation.passed, 7)
+        let pet = try JSONDecoder().decode(PetSerializer.self, from: json).model
+        XCTAssertEqual(pet.id, 99)
+        XCTAssertEqual(pet.name, "Rover")
+        XCTAssertEqual(pet.type, .doggy)
+        XCTAssertEqual(pet.age, 2)
     }
     
-    func testSerialization() {
+    func testDeserializeToExistingModel() throws {
+        let json = """
+            {
+                "id": 4,
+                "name": "Marla",
+                "age": 4
+            }
+            """.data(using: .utf8)!
         
-        do {
-            
-            let cb = CertificateBundle(reference: "ref", quantity: 34)
-            
-            let serializer = cb.makeSerializer()
-            serializer.includeQuantity = false
-            
-            let s = serializer.makeSerialization()
-
-            let jsonEncoder = JSONEncoder()
-            let json = try jsonEncoder.encode(s)
-            try pretty(json)
-
-            
-        } catch {
-            print(error)
-        }
+        let existingPet = Pet(id: 4, type: .kitty, name: "Marla", age: 3, whiskers: true, adoptedAt: nil)
+        
+        let decoder = JSONDecoder()
+        let key = CodingUserInfoKey(rawValue: "serialization.model")!
+        decoder.userInfo = [key: existingPet]
+        let pet = try decoder.decode(PetSerializer.self, from: json).model
+        XCTAssertEqual(pet.id, 4)
+        XCTAssertEqual(pet.name, "Marla")
+        XCTAssertEqual(pet.type, .kitty)
+        XCTAssertEqual(pet.whiskers, true)
+        XCTAssertEqual(pet.age, 4) // Only age was updated
     }
     
-    func pretty(_ data: Data) throws {
-        let json = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
-        let pretty = try JSONSerialization.data(withJSONObject: json, options: .prettyPrinted)
-        print(String(data: pretty, encoding: .utf8)!)
+    func testNullifyOptionalValue() throws {
+        let json = """
+            {
+                "id": 4,
+                "adoptedAt": null
+            }
+            """.data(using: .utf8)!
+        
+        let existingPet = Pet(id: 4, type: .kitty, name: "Marla", age: 3, whiskers: true, adoptedAt: Date())
+        XCTAssertNotNil(existingPet.adoptedAt)
+        
+        let decoder = JSONDecoder()
+        let key = CodingUserInfoKey(rawValue: "serialization.model")!
+        decoder.userInfo = [key: existingPet]
+        let pet = try decoder.decode(PetSerializer.self, from: json).model
+        XCTAssertEqual(pet.id, 4)
+        XCTAssertEqual(pet.name, "Marla")
+        XCTAssertEqual(pet.type, .kitty)
+        XCTAssertEqual(pet.whiskers, true)
+        XCTAssertEqual(pet.age, 3)
+        XCTAssertNil(pet.adoptedAt) // Nullified
+    }
+    
+    func testSerialization() throws {
+            
+        let owner = Owner(id: 1, name: "Sara")
+        let serializer = owner.makeSerializer()
+        let output = serializer.makeSerialization()
+
+        let jsonEncoder = JSONEncoder()
+        let json = try jsonEncoder.encode(output)
+        let obj = try json.toJSONObject()
+        
+        if let obj = obj as? [String: [String: [String: Any]]] {
+            XCTAssertEqual(obj.count, 2)
+            XCTAssertEqual(obj["owner"]?.count, 1)
+            XCTAssertEqual(obj["owner"]?["1"]?["name"] as? String, "Sara")
+            XCTAssertEqual(obj["pet"]?.count, 2)
+            XCTAssertEqual(obj["pet"]?["1"]?["name"] as? String, "Kathleen")
+            XCTAssertEqual(obj["pet"]?["1"]?["type"] as? String, "doggy")
+            XCTAssertEqual(obj["pet"]?["1"]?["whiskers"] as? Bool, true)
+            XCTAssertEqual(obj["pet"]?["1"]?["age"] as? Int, 10)
+            XCTAssertNil(obj["pet"]?["1"]?["adoptedAt"] as? NSNull)
+            XCTAssertEqual(obj["pet"]?["1"]?["id"] as? Int, 1)
+            XCTAssertEqual(obj["pet"]?["2"]?["name"] as? String, "Miso")
+            XCTAssertEqual(obj["pet"]?["2"]?["type"] as? String, "kitty")
+            XCTAssertEqual(obj["pet"]?["2"]?["whiskers"] as? Bool, true)
+            XCTAssertEqual(obj["pet"]?["2"]?["age"] as? Int, 3)
+            XCTAssertNotNil(obj["pet"]?["2"]?["adoptedAt"] as? NSNull)
+            XCTAssertEqual(obj["pet"]?["2"]?["id"] as? Int, 2)
+            
+        } else {
+            XCTFail("Could not convert serialization to expected shape")
+        }
+        
+        try pretty(json)
+
+    }
+    
+    private func pretty(_ data: Data) throws {
+        print(try data.prettyJSONString())
     }
 
 
-//    static var allTests = [
-//        // TODO
-//    ]
+    static var allTests = [
+        ("testDeserializeFromPartialInput", testDeserializeFromPartialInput),
+        ("testDeserializeToExistingModel", testDeserializeToExistingModel),
+        ("testNullifyOptionalValue", testNullifyOptionalValue),
+        ("testSerialization", testSerialization),
+    ]
 }
