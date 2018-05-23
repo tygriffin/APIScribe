@@ -11,11 +11,14 @@ public class Serialization : Encodable {
         self.topSerializer = topSerializer
     }
     
-    var topSerializer: InternalSerializer
+    var topSerializer: InternalSerializer?
     
     var store: Store = [:]
     
     public func encode(to encoder: Encoder) throws {
+        guard let topSerializer = topSerializer else {
+            assert(false)
+        }
         
         gather(serializer: topSerializer)
         

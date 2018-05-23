@@ -17,7 +17,13 @@ public protocol Deserializer : Decodable {
 extension Deserializer {
     
     init(from decoder: Decoder) throws {
+        
         self.init()
+        
+        if let d = decoder.userInfo[CodingUserInfoKey(rawValue: "serialization.deserializer")!] as? Self {
+            self = d
+        }
+        
         if let model = decoder.userInfo[CodingUserInfoKey(rawValue: "serialization.model")!] as? Model {
             self.model = model
         }
@@ -28,30 +34,32 @@ extension Deserializer {
         makeFields(builder: &builder)
         
         for field in builder.fields {
-            let key = DynamicKey(stringValue: field.key)!
-            
-            // String
-            try decode(field, container, key, \.stringDecode)
-            
-            // Int
-            try decode(field, container, key, \.intDecode)
-            try decodeOptional(field, container, key, \.intDecodeOptional)
-            
-            // Decimal
-            
-            // Double
-            
-            // Bool
-            try decode(field, container, key, \.boolDecode)
-          
-            // Date
-            try decodeOptional(field, container, key, \.dateDecodeOptional)
-            
-            
-            if field.referencingInternalModel {
-                model = builder.model
-            } else {
-                builder.model = model
+            if field.shouldDecode() {
+                let key = DynamicKey(stringValue: field.key)!
+                
+                // String
+                try decode(field, container, key, \.stringDecode)
+                
+                // Int
+                try decode(field, container, key, \.intDecode)
+                try decodeOptional(field, container, key, \.intDecodeOptional)
+                
+                // Decimal
+                
+                // Double
+                
+                // Bool
+                try decode(field, container, key, \.boolDecode)
+              
+                // Date
+                try decodeOptional(field, container, key, \.dateDecodeOptional)
+                
+                
+                if field.referencingInternalModel {
+                    model = builder.model
+                } else {
+                    builder.model = model
+                }
             }
         }
     }

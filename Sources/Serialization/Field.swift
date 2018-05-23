@@ -35,7 +35,8 @@ struct Field : Encodable {
     var dateDecode: ((Date) -> Void)?
     var dateDecodeOptional: ((Date?) -> Void)?
     
-    var shouldEncode = true
+    var shouldEncode: () -> Bool = { true }
+    var shouldDecode: () -> Bool = { true }
     var referencingInternalModel = false
     
     init(key: String) {

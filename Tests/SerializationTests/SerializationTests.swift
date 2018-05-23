@@ -11,8 +11,8 @@ struct Owner {
     
     func pets() -> [Pet] {
         return [
-            Pet(id: 1, type: .doggy, name: "Kathleen", age: 10, whiskers: true, adoptedAt: Date()),
-            Pet(id: 2, type: .kitty, name: "Miso", age: 3, whiskers: true, adoptedAt: nil)
+            Pet(id: 1, type: .doggy, name: "Kathleen", age: 11, whiskers: true, adoptedAt: Date()),
+            Pet(id: 2, type: .kitty, name: "Miso", age: 43, whiskers: true, adoptedAt: nil)
         ]
     }
 }
@@ -75,7 +75,9 @@ final class OwnerSerializer : Serializer {
 }
 
 final class PetSerializer : Serializer, Deserializer {
- 
+    
+    var shouldDecodeAge = true
+    
     func makeFields(builder b: inout FieldBuilder<Pet>) {
         b.add("id", \.id)
         b.add(
@@ -84,7 +86,7 @@ final class PetSerializer : Serializer, Deserializer {
             { self.model.type = PetType(rawValue: $0)! }
         )
         b.add("name", \.name)
-        b.add("age", \.age)
+        b.add("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
         b.add("whiskers", \.whiskers)
         b.add("adoptedAt", \.adoptedAt)
     }
@@ -92,6 +94,72 @@ final class PetSerializer : Serializer, Deserializer {
     static var type = "pet"
     var model = Pet()
     var storeId = \Pet.storeId
+}
+
+
+
+//
+// Models
+//
+struct Fruit {
+    var storeId: String { return "\(id!)" }
+    var id: Int?
+    var name = ""
+}
+
+struct Loop {
+    var storeId: String { return "\(id!)" }
+    var id: Int?
+    var name = ""
+}
+
+//
+// Serializable Extensions
+//
+extension Fruit : Serializable {
+    func makeSerializer() -> FruitSerializer {
+        return FruitSerializer(model: self)
+    }
+}
+
+extension Loop : Serializable {
+    func makeSerializer() -> LoopSerializer {
+        return LoopSerializer(model: self)
+    }
+}
+
+
+//
+// Serializers
+//
+final class FruitSerializer : Serializer {
+    
+    func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
+        b.add(Loop(id: 2, name: "Loopy"))
+    }
+    
+    func makeFields(builder b: inout FieldBuilder<Fruit>) {
+        b.add("name", \.name)
+    }
+    
+    static var type = "fruit"
+    var model = Fruit()
+    var storeId = \Fruit.storeId
+}
+
+final class LoopSerializer : Serializer {
+    
+    func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
+        b.add(Fruit(id: 2, name: "Apple")) // This is necessary to test infinite loop doesn't happen
+    }
+    
+    func makeFields(builder b: inout FieldBuilder<Loop>) {
+        b.add("name", \.name)
+    }
+    
+    static var type = "loop"
+    var model = Loop()
+    var storeId = \Loop.storeId
 }
 
 final class SerializationTests: XCTestCase {
@@ -177,13 +245,13 @@ final class SerializationTests: XCTestCase {
             XCTAssertEqual(obj["pet"]?["1"]?["name"] as? String, "Kathleen")
             XCTAssertEqual(obj["pet"]?["1"]?["type"] as? String, "doggy")
             XCTAssertEqual(obj["pet"]?["1"]?["whiskers"] as? Bool, true)
-            XCTAssertEqual(obj["pet"]?["1"]?["age"] as? Int, 10)
+            XCTAssertEqual(obj["pet"]?["1"]?["age"] as? Int, 11)
             XCTAssertNil(obj["pet"]?["1"]?["adoptedAt"] as? NSNull)
             XCTAssertEqual(obj["pet"]?["1"]?["id"] as? Int, 1)
             XCTAssertEqual(obj["pet"]?["2"]?["name"] as? String, "Miso")
             XCTAssertEqual(obj["pet"]?["2"]?["type"] as? String, "kitty")
             XCTAssertEqual(obj["pet"]?["2"]?["whiskers"] as? Bool, true)
-            XCTAssertEqual(obj["pet"]?["2"]?["age"] as? Int, 3)
+            XCTAssertEqual(obj["pet"]?["2"]?["age"] as? Int, 43)
             XCTAssertNotNil(obj["pet"]?["2"]?["adoptedAt"] as? NSNull)
             XCTAssertEqual(obj["pet"]?["2"]?["id"] as? Int, 2)
             
@@ -193,6 +261,70 @@ final class SerializationTests: XCTestCase {
         
         try pretty(json)
 
+    }
+    
+    func testShouldEncode() throws {
+        let pet = Pet.init(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil)
+        
+        let serializer = pet.makeSerializer()
+        let output = serializer.makeSerialization()
+        
+        let jsonEncoder = JSONEncoder()
+        let json = try jsonEncoder.encode(output)
+        let obj = try json.toJSONObject()
+        
+        if let obj = obj as? [String: [String: [String: Any]]] {
+            XCTAssertEqual(obj.count, 1)
+            XCTAssertEqual(obj["pet"]?.count, 1)
+            XCTAssertEqual(obj["pet"]?["88"]?["name"] as? String, "Jane")
+            XCTAssertEqual(obj["pet"]?["88"]?["type"] as? String, "kitty")
+            XCTAssertNil(obj["pet"]?["88"]?["age"]) // Age is not encoded because it is over 10
+            
+        } else {
+            XCTFail("Could not convert serialization to expected shape")
+        }
+    }
+    
+    func testShouldDecode() throws {
+        let json = """
+            {
+                "id": 77,
+                "name": "June",
+                "type": "doggy",
+                "age": 2
+            }
+            """.data(using: .utf8)!
+        
+        let decoder = JSONDecoder()
+        let deserializer = PetSerializer()
+        deserializer.shouldDecodeAge = false
+        let key = CodingUserInfoKey(rawValue: "serialization.deserializer")!
+        decoder.userInfo = [key: deserializer]
+        
+        let pet = try decoder.decode(PetSerializer.self, from: json).model
+        XCTAssertEqual(pet.id, 77)
+        XCTAssertEqual(pet.name, "June")
+        XCTAssertEqual(pet.age, 0)
+    }
+    
+    func testInfiniteLoop() throws {
+        let fruit = Fruit(id: 2, name: "Apple")
+        let serializer = fruit.makeSerializer()
+        let output = serializer.makeSerialization()
+        
+        let jsonEncoder = JSONEncoder()
+        let json = try jsonEncoder.encode(output)
+        let obj = try json.toJSONObject()
+        
+        if let obj = obj as? [String: [String: [String: Any]]] {
+            XCTAssertEqual(obj.count, 2)
+            XCTAssertEqual(obj["fruit"]?.count, 1)
+            XCTAssertEqual(obj["loop"]?.count, 1)
+        } else {
+            XCTFail("Could not convert serialization to expected shape")
+        }
+        
+        try pretty(json)
     }
     
     private func pretty(_ data: Data) throws {
@@ -205,5 +337,7 @@ final class SerializationTests: XCTestCase {
         ("testDeserializeToExistingModel", testDeserializeToExistingModel),
         ("testNullifyOptionalValue", testNullifyOptionalValue),
         ("testSerialization", testSerialization),
+        ("testShouldEncode", testShouldEncode),
+        ("testShouldDecode", testShouldDecode),
     ]
 }

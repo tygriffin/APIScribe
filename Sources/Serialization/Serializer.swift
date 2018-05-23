@@ -24,7 +24,9 @@ extension Serializer {
         var builder = FieldBuilder<Model>(model: model)
         makeFields(builder: &builder)
         for field in builder.fields {
-            try container.encode(field, forKey: DynamicKey(stringValue: field.key)!)
+            if field.shouldEncode() {
+                try container.encode(field, forKey: DynamicKey(stringValue: field.key)!)
+            }
         }
     }
     
