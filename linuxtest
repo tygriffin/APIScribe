@@ -1,0 +1,4 @@
+#!/bin/bash
+TAG=serilializationtests
+docker build --tag $TAG .
+docker run --rm $TAG
