@@ -5,22 +5,26 @@
 //  Created by Taylor Griffin on 13/5/18.
 //
 
-public class Serialization : Encodable {
+public final class Serialization : Codable {
+    
+    init() {}
     
     init(topSerializer: InternalSerializer) {
-        self.topSerializer = topSerializer
+        self.topSerializers = [topSerializer]
     }
     
-    var topSerializer: InternalSerializer?
+    public required init(from decoder: Decoder) throws {
+        // TODO
+    }
+    
+    var topSerializers: [InternalSerializer] = []
     
     var store: Store = [:]
     
     public func encode(to encoder: Encoder) throws {
-        guard let topSerializer = topSerializer else {
-            assert(false)
+        for s in topSerializers {
+            gather(serializer: s)
         }
-        
-        gather(serializer: topSerializer)
         
         var container = encoder.container(keyedBy: DynamicKey.self)
 

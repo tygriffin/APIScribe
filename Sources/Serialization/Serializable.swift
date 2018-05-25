@@ -24,3 +24,13 @@ extension Serializable {
         return makeSerializer()
     }
 }
+
+extension Array where Element: Serializable {
+    public func makeSerialization() throws -> Serialization {
+        let result = Serialization()
+        for el in self {
+            result.topSerializers.append(el.makeSerializer())
+        }
+        return result
+    }
+}
