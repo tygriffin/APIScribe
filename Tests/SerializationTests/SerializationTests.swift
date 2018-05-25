@@ -339,5 +339,6 @@ final class SerializationTests: XCTestCase {
         ("testSerialization", testSerialization),
         ("testShouldEncode", testShouldEncode),
         ("testShouldDecode", testShouldDecode),
+        ("testInfiniteLoop", testInfiniteLoop),
     ]
 }

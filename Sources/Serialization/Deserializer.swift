@@ -16,7 +16,7 @@ public protocol Deserializer : Decodable {
 
 extension Deserializer {
     
-    init(from decoder: Decoder) throws {
+    public init(from decoder: Decoder) throws {
         
         self.init()
         
@@ -39,19 +39,26 @@ extension Deserializer {
                 
                 // String
                 try decode(field, container, key, \.stringDecode)
+                try decodeOptional(field, container, key, \.stringDecodeOptional)
                 
                 // Int
                 try decode(field, container, key, \.intDecode)
                 try decodeOptional(field, container, key, \.intDecodeOptional)
                 
                 // Decimal
+                try decode(field, container, key, \.decimalDecode)
+                try decodeOptional(field, container, key, \.decimalDecodeOptional)
                 
                 // Double
+                try decode(field, container, key, \.doubleDecode)
+                try decodeOptional(field, container, key, \.doubleDecodeOptional)
                 
                 // Bool
                 try decode(field, container, key, \.boolDecode)
+                try decodeOptional(field, container, key, \.boolDecodeOptional)
               
                 // Date
+                try decode(field, container, key, \.dateDecode)
                 try decodeOptional(field, container, key, \.dateDecodeOptional)
                 
                 

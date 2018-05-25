@@ -5,22 +5,22 @@
 //  Created by Taylor Griffin on 13/5/18.
 //
 
-protocol CanMakeSerializer {
+public protocol CanMakeSerializer {
     func internalSerializer() -> InternalSerializer
 }
 
-protocol Serializable : CanMakeSerializer {
+public protocol Serializable : CanMakeSerializer {
     associatedtype ModelSerializer: InternalSerializer
     
     func makeSerializer() -> ModelSerializer
 }
 
 extension Serializable {
-    func makeSerialization() -> Serialization {
+    public func makeSerialization() -> Serialization {
         return Serialization(topSerializer: makeSerializer())
     }
     
-    func internalSerializer() -> InternalSerializer {
+    public func internalSerializer() -> InternalSerializer {
         return makeSerializer()
     }
 }

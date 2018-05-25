@@ -29,7 +29,7 @@ struct Field : Encodable {
     // Bool
     var boolValue: Bool?
     var boolDecode: ((Bool) -> Void)?
-    var boolDecodeOptional: ((Bool) -> Void)?
+    var boolDecodeOptional: ((Bool?) -> Void)?
     // Date
     var dateValue: Date?
     var dateDecode: ((Date) -> Void)?

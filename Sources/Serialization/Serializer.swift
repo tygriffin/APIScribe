@@ -14,12 +14,13 @@ public protocol Serializer : InternalSerializer {
 }
 
 extension Serializer {
-    init(model: Model) {
+    
+    public init(model: Model) {
         self.init()
         self.model = model
     }
     
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: DynamicKey.self)
         var builder = FieldBuilder<Model>(model: model)
         makeFields(builder: &builder)
@@ -30,7 +31,7 @@ extension Serializer {
         }
     }
     
-    var storeIdString: String {
+    public var storeIdString: String {
         return model[keyPath: storeId]
     }
 }
@@ -45,13 +46,13 @@ public protocol InternalSerializer : Storable {
 
 extension InternalSerializer {
     
-    func makeSerialization() -> Serialization {
+    public func makeSerialization() -> Serialization {
         return Serialization(topSerializer: self)
     }
     
-    var storeKey: String {
+    public var storeKey: String {
         return Self.type
     }
     
-    func sideLoadResources(builder: inout SideLoadedResourceBuilder) {}
+    public func sideLoadResources(builder: inout SideLoadedResourceBuilder) {}
 }
