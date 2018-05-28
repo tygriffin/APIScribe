@@ -12,7 +12,7 @@
  CanMakeSerializer.
  */
 public protocol CanMakeSerializer {
-    func internalSerializer() -> BaseSerializer
+    func internalSerializer(in context: Context?) -> BaseSerializer
 }
 
 /**
@@ -23,11 +23,11 @@ public protocol CanMakeSerializer {
 public protocol Serializable : CanMakeSerializer {
     associatedtype ModelSerializer: BaseSerializer
     
-    func makeSerializer() -> ModelSerializer
+    func makeSerializer(in context: Context?) -> ModelSerializer
 }
 
 extension Serializable {
-    public func internalSerializer() -> BaseSerializer {
-        return makeSerializer()
+    public func internalSerializer(in context: Context? = nil) -> BaseSerializer {
+        return makeSerializer(in: context)
     }
 }

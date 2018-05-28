@@ -41,15 +41,25 @@ struct Pet {
 //
 // Serializable Extensions
 //
+class PetContext : Context {
+    var withWhiskers = true
+}
+
 extension Owner : Serializable {
-    func makeSerializer() -> OwnerSerializer {
-        return OwnerSerializer(model: self)
+    func makeSerializer(in context: Context? = nil) -> OwnerSerializer {
+        return OwnerSerializer(model: self, in: context)
     }
 }
 
 extension Pet : Serializable {
-    func makeSerializer() -> PetSerializer {
-        return PetSerializer(model: self)
+    func makeSerializer(in context: Context? = nil) -> PetSerializer {
+        let s = PetSerializer(model: self, in: context)
+        
+        if let petContext = context as? PetContext {
+            s.includeWhiskers = petContext.withWhiskers
+        }
+        
+        return s
     }
 }
 
@@ -58,8 +68,6 @@ extension Pet : Serializable {
 // Serializers
 //
 final class OwnerSerializer : Serializer {
-    
-    var includeWhiskers = true
     
     func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
         b.add(model.pets())
@@ -71,12 +79,14 @@ final class OwnerSerializer : Serializer {
     
     static var type = "owner"
     var model = Owner()
+    var context: Context?
     var storeId = \Owner.storeId
 }
 
 final class PetSerializer : Serializer, Deserializer {
     
     var shouldDecodeAge = true
+    var includeWhiskers = true
     
     func makeFields(builder b: inout FieldBuilder<Pet>) {
         b.add("id", \.id)
@@ -87,12 +97,13 @@ final class PetSerializer : Serializer, Deserializer {
         )
         b.add("name", \.name)
         b.add("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
-        b.add("whiskers", \.whiskers)
+        b.add("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
         b.add("adoptedAt", \.adoptedAt)
     }
     
     static var type = "pet"
     var model = Pet()
+    var context: Context?
     var storeId = \Pet.storeId
 }
 
@@ -117,14 +128,14 @@ struct Loop {
 // Serializable Extensions
 //
 extension Fruit : Serializable {
-    func makeSerializer() -> FruitSerializer {
-        return FruitSerializer(model: self)
+    func makeSerializer(in context: Context? = nil) -> FruitSerializer {
+        return FruitSerializer(model: self, in: context)
     }
 }
 
 extension Loop : Serializable {
-    func makeSerializer() -> LoopSerializer {
-        return LoopSerializer(model: self)
+    func makeSerializer(in context: Context? = nil) -> LoopSerializer {
+        return LoopSerializer(model: self, in: context)
     }
 }
 
@@ -144,6 +155,7 @@ final class FruitSerializer : Serializer {
     
     static var type = "fruit"
     var model = Fruit()
+    var context: Context?
     var storeId = \Fruit.storeId
 }
 
@@ -159,6 +171,7 @@ final class LoopSerializer : Serializer {
     
     static var type = "loop"
     var model = Loop()
+    var context: Context?
     var storeId = \Loop.storeId
 }
 
@@ -343,6 +356,27 @@ final class SerializationTests: XCTestCase {
         try pretty(json)
     }
     
+    func testSerializationWithContext() throws {
+        
+        let pet = Pet(id: 3, type: .kitty, name: "Tuna", age: 1, whiskers: true, adoptedAt: nil)
+        let context = PetContext()
+        context.withWhiskers = false
+        let serializer = pet.makeSerializer(in: context)
+        
+        let jsonEncoder = JSONEncoder()
+        let json = try jsonEncoder.encode(serializer)
+        let obj = try json.toJSONObject()
+        
+        if let obj = obj as? [String: [String: [String: Any]]] {
+            XCTAssertEqual(obj.count, 1)
+            XCTAssertEqual(obj["pet"]?.count, 1)
+            XCTAssertNil(obj["pet"]?["3"]?["whiskers"])
+            
+        } else {
+            XCTFail("Could not convert serialization to expected shape")
+        }
+    }
+    
     private func pretty(_ data: Data) throws {
         print(try data.prettyJSONString())
     }
@@ -357,5 +391,6 @@ final class SerializationTests: XCTestCase {
         ("testShouldDecode", testShouldDecode),
         ("testInfiniteLoop", testInfiniteLoop),
         ("testSerializeArray", testSerializeArray),
+        ("testSerializationWithContext", testSerializationWithContext),
     ]
 }

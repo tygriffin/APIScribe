@@ -55,7 +55,7 @@ extension Dictionary where Key == String, Value == [String: Storable] {
         
         for resource in builder.resources {
             // TODO: Alternatively, pass in a serializer here to use instead of default
-            let resourceSerializer = resource.value.internalSerializer()
+            let resourceSerializer = resource.value.internalSerializer(in: serializer.context)
             
             if !self.isAlreadySerialized(
                 key: resourceSerializer.storeKey,

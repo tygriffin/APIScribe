@@ -20,14 +20,15 @@ public protocol Serializer : BaseSerializer {
     // Instructions for serialization / deserialization
     func makeFields(builder: inout FieldBuilder<Model>)
     
-    init(model: Model)
+    init(model: Model, in context: Context?)
 }
 
 extension Serializer {
     
-    public init(model: Model) {
+    public init(model: Model, in context: Context? = nil) {
         self.init()
         self.model = model
+        self.context = context
     }
     
     public func encode(to encoder: Encoder) throws {
@@ -65,8 +66,8 @@ extension Serializer {
 
 public protocol BaseSerializer : Storable {
     
+    var context: Context? { get set }
     init()
-    
     func sideLoadResources(builder: inout SideLoadedResourceBuilder)
 }
 

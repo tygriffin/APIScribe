@@ -23,8 +23,8 @@ public struct ArraySerializer: Encodable {
 }
 
 extension Array where Element: Serializable {
-    public func makeSerializer() throws -> ArraySerializer {
-        return ArraySerializer(serializers: self.map { $0.makeSerializer() })
+    public func makeSerializer(in context: Context? = nil) throws -> ArraySerializer {
+        return ArraySerializer(serializers: self.map { $0.makeSerializer(in: context) })
     }
 }
 
