@@ -9,7 +9,7 @@
  Abstraction for serializing a collection of Serializables.
  */
 public struct ArraySerializer: Encodable {
-    var serializers: [BaseSerializer]
+    public var serializers: [BaseSerializer]
     
     public func encode(to encoder: Encoder) throws {
         var store = Store()
