@@ -5,6 +5,9 @@
 //  Created by Taylor Griffin on 28/5/18.
 //
 
+/**
+ Abstraction for serializing a collection of Serializables.
+ */
 public struct ArraySerializer: Encodable {
     var serializers: [BaseSerializer]
     
@@ -19,9 +22,9 @@ public struct ArraySerializer: Encodable {
     }
 }
 
-extension Array where Element: BaseSerializer {
+extension Array where Element: Serializable {
     public func makeSerializer() throws -> ArraySerializer {
-        return ArraySerializer(serializers: self)
+        return ArraySerializer(serializers: self.map { $0.makeSerializer() })
     }
 }
 

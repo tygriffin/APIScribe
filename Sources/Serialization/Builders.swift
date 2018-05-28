@@ -7,6 +7,11 @@
 
 import Foundation
 
+/**
+ Convenient abstraction for building up Fields.
+ - Note: When adding support for additional data-types, this class must
+ be extended.
+ */
 public class FieldBuilder<M> {
     var fields: [Field] = []
     var model: M
@@ -146,6 +151,9 @@ public class FieldBuilder<M> {
     }
 }
 
+/**
+ Convenient abstraction for adding Resources.
+ */
 public struct SideLoadedResourceBuilder {
     var resources: [Resource] = []
     

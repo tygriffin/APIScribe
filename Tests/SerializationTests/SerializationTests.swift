@@ -322,8 +322,8 @@ final class SerializationTests: XCTestCase {
     func testSerializeArray() throws {
         
         let pets = [
-            Pet(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil).makeSerializer(),
-            Pet(id: 99, type: .doggy, name: "Jin", age: 2, whiskers: true, adoptedAt: Date()).makeSerializer(),
+            Pet(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil),
+            Pet(id: 99, type: .doggy, name: "Jin", age: 2, whiskers: true, adoptedAt: Date()),
         ]
         
         let jsonEncoder = JSONEncoder()

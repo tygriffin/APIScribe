@@ -7,6 +7,11 @@
 
 import Foundation
 
+/**
+ Struct to hold the actual encodable value and the decoding instructions,
+ as well as closures that determine if encoding / decoding should take place.
+ If more data types are to be supported, then storage must be added to this struct.
+ */
 struct Field : Encodable {
     var key: String
     
@@ -37,6 +42,9 @@ struct Field : Encodable {
     
     var shouldEncode: () -> Bool = { true }
     var shouldDecode: () -> Bool = { true }
+    
+    /// An internal flag that signals whether the model should copied back up
+    /// to the deserializer or back down the builder.
     var referencingInternalModel = false
     
     init(key: String) {
