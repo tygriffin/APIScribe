@@ -231,10 +231,9 @@ final class SerializationTests: XCTestCase {
             
         let owner = Owner(id: 1, name: "Sara")
         let serializer = owner.makeSerializer()
-        let output = serializer.makeSerialization()
 
         let jsonEncoder = JSONEncoder()
-        let json = try jsonEncoder.encode(output)
+        let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
         if let obj = obj as? [String: [String: [String: Any]]] {
@@ -258,19 +257,15 @@ final class SerializationTests: XCTestCase {
         } else {
             XCTFail("Could not convert serialization to expected shape")
         }
-        
-        try pretty(json)
-
     }
     
     func testShouldEncode() throws {
         let pet = Pet.init(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil)
         
         let serializer = pet.makeSerializer()
-        let output = serializer.makeSerialization()
         
         let jsonEncoder = JSONEncoder()
-        let json = try jsonEncoder.encode(output)
+        let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
         if let obj = obj as? [String: [String: [String: Any]]] {
@@ -310,16 +305,37 @@ final class SerializationTests: XCTestCase {
     func testInfiniteLoop() throws {
         let fruit = Fruit(id: 2, name: "Apple")
         let serializer = fruit.makeSerializer()
-        let output = serializer.makeSerialization()
         
         let jsonEncoder = JSONEncoder()
-        let json = try jsonEncoder.encode(output)
+        let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
         if let obj = obj as? [String: [String: [String: Any]]] {
             XCTAssertEqual(obj.count, 2)
             XCTAssertEqual(obj["fruit"]?.count, 1)
             XCTAssertEqual(obj["loop"]?.count, 1)
+        } else {
+            XCTFail("Could not convert serialization to expected shape")
+        }
+    }
+    
+    func testSerializeArray() throws {
+        
+        let pets = [
+            Pet(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil).makeSerializer(),
+            Pet(id: 99, type: .doggy, name: "Jin", age: 2, whiskers: true, adoptedAt: Date()).makeSerializer(),
+        ]
+        
+        let jsonEncoder = JSONEncoder()
+        let json = try jsonEncoder.encode(pets.makeSerializer())
+        let obj = try json.toJSONObject()
+        
+        if let obj = obj as? [String: [String: [String: Any]]] {
+            XCTAssertEqual(obj.count, 1)
+            XCTAssertEqual(obj["pet"]?.count, 2)
+            XCTAssertEqual(obj["pet"]?["88"]?["name"] as? String, "Jane")
+            XCTAssertEqual(obj["pet"]?["99"]?["name"] as? String, "Jin")
+            
         } else {
             XCTFail("Could not convert serialization to expected shape")
         }
@@ -340,5 +356,6 @@ final class SerializationTests: XCTestCase {
         ("testShouldEncode", testShouldEncode),
         ("testShouldDecode", testShouldDecode),
         ("testInfiniteLoop", testInfiniteLoop),
+        ("testSerializeArray", testSerializeArray),
     ]
 }

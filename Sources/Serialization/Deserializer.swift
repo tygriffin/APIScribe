@@ -16,15 +16,29 @@ public protocol Deserializer : Decodable {
 
 extension Deserializer {
     
+    public static var deserializerInfoKey: CodingUserInfoKey? {
+        return CodingUserInfoKey(rawValue: "serialization.deserializer")
+    }
+    
+    public static var modelInfoKey: CodingUserInfoKey? {
+        return CodingUserInfoKey(rawValue: "serialization.model")
+    }
+    
     public init(from decoder: Decoder) throws {
         
         self.init()
         
-        if let d = decoder.userInfo[CodingUserInfoKey(rawValue: "serialization.deserializer")!] as? Self {
-            self = d
+        if
+            let key = Self.deserializerInfoKey,
+            let userInfoDeserializer = decoder.userInfo[key] as? Self {
+            
+            self = userInfoDeserializer
         }
         
-        if let model = decoder.userInfo[CodingUserInfoKey(rawValue: "serialization.model")!] as? Model {
+        if
+            let key = Self.modelInfoKey,
+            let model = decoder.userInfo[key] as? Model {
+            
             self.model = model
         }
         
@@ -35,7 +49,7 @@ extension Deserializer {
         
         for field in builder.fields {
             if field.shouldDecode() {
-                let key = DynamicKey(stringValue: field.key)!
+                let key = DynamicKey(stringValue: field.key)
                 
                 // String
                 try decode(field, container, key, \.stringDecode)
@@ -77,9 +91,9 @@ extension Deserializer {
         _ key: DynamicKey,
         _ path: KeyPath<Field, ((T)->Void)?>) throws {
         
-        if let d = field[keyPath: path] {
-            if let v = try container.decodeIfPresent(T.self, forKey: key) {
-                d(v)
+        if let decodeFn = field[keyPath: path] {
+            if let nextValue = try container.decodeIfPresent(T.self, forKey: key) {
+                decodeFn(nextValue)
             }
         }
     }
@@ -90,10 +104,10 @@ extension Deserializer {
         _ key: DynamicKey,
         _ path: KeyPath<Field, ((T?)->Void)?>) throws {
         
-        if let d = field[keyPath: path] {
+        if let decodeFn = field[keyPath: path] {
             do {
-                let v = try container.decode(T?.self, forKey: key)
-                d(v)
+                let nextValue = try container.decode(T?.self, forKey: key)
+                decodeFn(nextValue)
             } catch DecodingError.keyNotFound {}
         }
     }

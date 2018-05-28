@@ -7,7 +7,7 @@
 
 struct DynamicKey : CodingKey {
     var stringValue: String
-    init?(stringValue: String) {
+    init(stringValue: String) {
         self.stringValue = stringValue
     }
     var intValue: Int? { return nil }

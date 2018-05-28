@@ -6,31 +6,17 @@
 //
 
 public protocol CanMakeSerializer {
-    func internalSerializer() -> InternalSerializer
+    func internalSerializer() -> BaseSerializer
 }
 
 public protocol Serializable : CanMakeSerializer {
-    associatedtype ModelSerializer: InternalSerializer
+    associatedtype ModelSerializer: BaseSerializer
     
     func makeSerializer() -> ModelSerializer
 }
 
 extension Serializable {
-    public func makeSerialization() -> Serialization {
-        return Serialization(topSerializer: makeSerializer())
-    }
-    
-    public func internalSerializer() -> InternalSerializer {
+    public func internalSerializer() -> BaseSerializer {
         return makeSerializer()
-    }
-}
-
-extension Array where Element: Serializable {
-    public func makeSerialization() throws -> Serialization {
-        let result = Serialization()
-        for el in self {
-            result.topSerializers.append(el.makeSerializer())
-        }
-        return result
     }
 }
