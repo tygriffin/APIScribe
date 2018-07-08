@@ -10,15 +10,12 @@
  its side-loaded resources, and acts as a kind of context for
  conditional serializing.
  */
-public protocol Serializer : BaseSerializer {
-    associatedtype Model
-    
-    // The model to be serialized
-    var model: Model { get set }
+public protocol Serializer : ResourceSerializer, ModelHolder {
+
     // The namespace for like models in the output
     var storeId: KeyPath<Model, String> { get }
     // Instructions for serialization / deserialization
-    func makeFields(builder: inout FieldBuilder<Model>)
+    func makeFields(builder: inout FieldBuilder<Self>) throws
     
     init(model: Model, in context: Context?)
 }
@@ -49,34 +46,13 @@ extension Serializer {
     }
     
     private func encodeAsLeaf(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: DynamicKey.self)
-        var builder = FieldBuilder<Model>(model: model)
-        makeFields(builder: &builder)
-        for field in builder.fields {
-            if field.shouldEncode() {
-                try container.encode(field, forKey: DynamicKey(stringValue: field.key))
-            }
-        }
+        let container = encoder.container(keyedBy: DynamicKey.self)
+        var builder = FieldBuilder<Self>(modelHolder: self)
+        builder.encodingContainer = container
+        try makeFields(builder: &builder)
     }
     
     public var storeIdString: String {
         return model[keyPath: storeId]
     }
-}
-
-public protocol BaseSerializer : Storable {
-    
-    var context: Context? { get set }
-    init()
-    func sideLoadResources(builder: inout SideLoadedResourceBuilder)
-}
-
-extension BaseSerializer {
-    
-    public var storeKey: String {
-        return Self.type
-    }
-    
-    // Side loading resources is optional
-    public func sideLoadResources(builder: inout SideLoadedResourceBuilder) {}
 }

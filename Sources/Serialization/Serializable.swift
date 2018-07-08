@@ -11,8 +11,8 @@
  side-loadable, Serializable should be extended as opposed to
  CanMakeSerializer.
  */
-public protocol CanMakeSerializer {
-    func internalSerializer(in context: Context?) -> BaseSerializer
+public protocol SerializerProducer {
+    func internalSerializer(in context: Context?) -> ResourceSerializer
 }
 
 /**
@@ -20,14 +20,14 @@ public protocol CanMakeSerializer {
  hence, be serialized. These models can also be included as side-loaded
  resources on other models.
  */
-public protocol Serializable : CanMakeSerializer {
-    associatedtype ModelSerializer: BaseSerializer
+public protocol Serializable : SerializerProducer {
+    associatedtype ModelSerializer: ResourceSerializer
     
     func makeSerializer(in context: Context?) -> ModelSerializer
 }
 
 extension Serializable {
-    public func internalSerializer(in context: Context? = nil) -> BaseSerializer {
+    public func internalSerializer(in context: Context? = nil) -> ResourceSerializer {
         return makeSerializer(in: context)
     }
 }

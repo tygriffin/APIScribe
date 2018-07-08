@@ -73,8 +73,8 @@ final class OwnerSerializer : Serializer {
         b.add(model.pets())
     }
     
-    func makeFields(builder b: inout FieldBuilder<Owner>) {
-        b.add("name", \.name)
+    func makeFields(builder b: inout FieldBuilder<OwnerSerializer>) throws {
+        try b.field("name", \.name)
     }
     
     static var type = "owner"
@@ -88,17 +88,20 @@ final class PetSerializer : Serializer, Deserializer {
     var shouldDecodeAge = true
     var includeWhiskers = true
     
-    func makeFields(builder b: inout FieldBuilder<Pet>) {
-        b.add("id", \.id)
-        b.add(
+    func makeFields(builder b: inout FieldBuilder<PetSerializer>) throws {
+        try b.field("id", \.id)
+        try b.field(
             "type",
             model.type.rawValue,
             { self.model.type = PetType(rawValue: $0)! }
         )
-        b.add("name", \.name)
-        b.add("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
-        b.add("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
-        b.add("adoptedAt", \.adoptedAt)
+        try b.field("name", model.name, { self.model.name = $0 })
+        try b.field("somearray", ["I", "am", "an", "array"], { _ in })
+        try b.field("someobj", ["Hello": 1], { _ in })
+        try b.field("name", \.name)
+        try b.field("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
+        try b.field("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
+        try b.field("adoptedAt", \.adoptedAt)
     }
     
     static var type = "pet"
@@ -149,8 +152,8 @@ final class FruitSerializer : Serializer {
         b.add(Loop(id: 2, name: "Loopy"))
     }
     
-    func makeFields(builder b: inout FieldBuilder<Fruit>) {
-        b.add("name", \.name)
+    func makeFields(builder b: inout FieldBuilder<FruitSerializer>) throws {
+        try b.field("name", \.name)
     }
     
     static var type = "fruit"
@@ -165,8 +168,8 @@ final class LoopSerializer : Serializer {
         b.add(Fruit(id: 2, name: "Apple")) // This is necessary to test infinite loop doesn't happen
     }
     
-    func makeFields(builder b: inout FieldBuilder<Loop>) {
-        b.add("name", \.name)
+    func makeFields(builder b: inout FieldBuilder<LoopSerializer>) throws {
+        try b.field("name", \.name)
     }
     
     static var type = "loop"
@@ -266,6 +269,10 @@ final class SerializationTests: XCTestCase {
             XCTAssertEqual(obj["pet"]?["2"]?["age"] as? Int, 43)
             XCTAssertNotNil(obj["pet"]?["2"]?["adoptedAt"] as? NSNull)
             XCTAssertEqual(obj["pet"]?["2"]?["id"] as? Int, 2)
+            
+            let j = try JSONSerialization.data(withJSONObject: obj, options: .prettyPrinted)
+            print(String.init(data: j, encoding: .utf8)!)
+            
             
         } else {
             XCTFail("Could not convert serialization to expected shape")

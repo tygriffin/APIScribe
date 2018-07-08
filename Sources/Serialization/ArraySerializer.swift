@@ -9,7 +9,7 @@
  Abstraction for serializing a collection of Serializables.
  */
 public struct ArraySerializer: Encodable {
-    public var serializers: [BaseSerializer]
+    public var serializers: [ResourceSerializer]
     
     public func encode(to encoder: Encoder) throws {
         var store = Store()
@@ -23,7 +23,7 @@ public struct ArraySerializer: Encodable {
 }
 
 extension Array where Element: Serializable {
-    public func makeSerializer(in context: Context? = nil) throws -> ArraySerializer {
+    public func makeSerializer(in context: Context? = nil) -> ArraySerializer {
         return ArraySerializer(serializers: self.map { $0.makeSerializer(in: context) })
     }
 }

@@ -8,146 +8,58 @@
 import Foundation
 
 /**
- Convenient abstraction for building up Fields.
- - Note: When adding support for additional data-types, this class must
- be extended.
+ Convenient abstraction for building up fields.
  */
-public class FieldBuilder<M> {
-    var fields: [Field] = []
-    var model: M
+public class FieldBuilder<S: ModelHolder> {
+    public typealias M = S.Model
+    private var modelHolder: S
     
-    init(model: M) {
-        self.model = model
-    }
+    var encodingContainer: KeyedEncodingContainer<DynamicKey>?
+    var decodingContainer: KeyedDecodingContainer<DynamicKey>?
     
-    // Base
-    //
-    
-    // String
-    public func add(_ key: String, _ value: String?, _ decoder: @escaping (String) -> Void, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        add(key, value, decoder, \.stringValue, \.stringDecode, shouldEncode, shouldDecode)
-    }
-    // Int
-    public func add(_ key: String, _ value: Int?, _ decoder: @escaping (Int) -> Void, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        add(key, value, decoder, \.intValue, \.intDecode, shouldEncode, shouldDecode)
-    }
-    // Decimal
-    public func add(_ key: String, _ value: Decimal?, _ decoder: @escaping (Decimal) -> Void, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        add(key, value, decoder, \.decimalValue, \.decimalDecode, shouldEncode, shouldDecode)
-    }
-    // Double
-    public func add(_ key: String, _ value: Double?, _ decoder: @escaping (Double) -> Void, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        add(key, value, decoder, \.doubleValue, \.doubleDecode, shouldEncode, shouldDecode)
-    }
-    // Bool
-    public func add(_ key: String, _ value: Bool?, _ decoder: @escaping (Bool) -> Void, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        add(key, value, decoder, \.boolValue, \.boolDecode, shouldEncode, shouldDecode)
-    }
-    // Date
-    public func add(_ key: String, _ value: Date?, _ decoder: @escaping (Date) -> Void, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        add(key, value, decoder, \.dateValue, \.dateDecode, shouldEncode, shouldDecode)
+    init(modelHolder: S) {
+        self.modelHolder = modelHolder
     }
     
-    private func add<T>(
+    public func field<Type: Codable>(
         _ key: String,
-        _ value: T?,
-        _ decoder: @escaping (T) -> Void,
-        _ valueKP: WritableKeyPath<Field,T?>,
-        _ decodeKP: WritableKeyPath<Field,((T)->Void)?>,
-        _ shouldEncode: @escaping () -> Bool = { true },
-        _ shouldDecode: @escaping () -> Bool = { true }) {
+        _ value: Type?,
+        _ decoder: @escaping (Type) -> Void,
+        shouldEncode: @autoclosure @escaping () -> Bool = true,
+        shouldDecode: @autoclosure @escaping () -> Bool = true
+    ) throws {
         
-        var field = Field(key: key)
-        field.shouldEncode = shouldEncode
-        field.shouldDecode = shouldDecode
-        field[keyPath: valueKP] = value
-        field[keyPath: decodeKP] = decoder
-        fields.append(field)
+        let codingKey = DynamicKey(stringValue: key)
+        
+        if var container = encodingContainer {
+            if shouldEncode() {
+                try container.encode(value, forKey: codingKey)
+            }
+        }
+        
+        if let container = decodingContainer {
+            if shouldDecode() {
+                do {
+                    let nextValue = try container.decode(Type.self, forKey: codingKey)
+                    decoder(nextValue)
+                } catch DecodingError.keyNotFound(_, _) {}
+            }
+        }
     }
     
-    // KeyPaths
-    //
-    
-    // String
-    public func add(_ key: String, _ path: WritableKeyPath<M,String>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPath(key, path, \.stringValue, \.stringDecode, shouldEncode, shouldDecode)
-    }
-    public func add(_ key: String, _ path: WritableKeyPath<M,String?>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPathOptional(key, path, \.stringValue, \.stringDecodeOptional, shouldEncode, shouldDecode)
-    }
-    
-    // Int
-    public func add(_ key: String, _ path: WritableKeyPath<M,Int>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPath(key, path, \.intValue, \.intDecode, shouldEncode, shouldDecode)
-    }
-    public func add(_ key: String, _ path: WritableKeyPath<M,Int?>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPathOptional(key, path, \.intValue, \.intDecodeOptional, shouldEncode, shouldDecode)
-    }
-    
-    // Decimal
-    public func add(_ key: String, _ path: WritableKeyPath<M,Decimal>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPath(key, path, \.decimalValue, \.decimalDecode, shouldEncode, shouldDecode)
-    }
-    public func add(_ key: String, _ path: WritableKeyPath<M,Decimal?>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPathOptional(key, path, \.decimalValue, \.decimalDecodeOptional, shouldEncode, shouldDecode)
-    }
-    
-    // Double
-    public func add(_ key: String, _ path: WritableKeyPath<M,Double>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPath(key, path, \.doubleValue, \.doubleDecode, shouldEncode, shouldDecode)
-    }
-    public func add(_ key: String, _ path: WritableKeyPath<M,Double?>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPathOptional(key, path, \.doubleValue, \.doubleDecodeOptional, shouldEncode, shouldDecode)
-    }
-    
-    // Bool
-    public func add(_ key: String, _ path: WritableKeyPath<M,Bool>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPath(key, path, \.boolValue, \.boolDecode, shouldEncode, shouldDecode)
-    }
-    public func add(_ key: String, _ path: WritableKeyPath<M,Bool?>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPathOptional(key, path, \.boolValue, \.boolDecodeOptional, shouldEncode, shouldDecode)
-    }
-    
-    // Date
-    public func add(_ key: String, _ path: WritableKeyPath<M,Date>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPath(key, path, \.dateValue, \.dateDecode, shouldEncode, shouldDecode)
-    }
-    public func add(_ key: String, _ path: WritableKeyPath<M,Date?>, shouldEncode: @autoclosure @escaping () -> Bool = true, shouldDecode: @autoclosure @escaping () -> Bool = true) {
-        addForKeyPathOptional(key, path, \.dateValue, \.dateDecodeOptional, shouldEncode, shouldDecode)
-    }
-    
-    private func addForKeyPath<T>(
+    public func field<Type: Codable>(
         _ key: String,
-        _ path: WritableKeyPath<M,T>,
-        _ valueKP: WritableKeyPath<Field,T?>,
-        _ decodeKP: WritableKeyPath<Field,((T)->Void)?>,
-        _ shouldEncode: @escaping () -> Bool = { true },
-        _ shouldDecode: @escaping () -> Bool = { true }) {
-        
-        var field = Field(key: key)
-        field.shouldEncode = shouldEncode
-        field.shouldDecode = shouldDecode
-        field[keyPath: valueKP] = model[keyPath: path]
-        field[keyPath: decodeKP] = { self.model[keyPath: path] = $0 }
-        field.referencingInternalModel = true
-        fields.append(field)
-    }
-    
-    private func addForKeyPathOptional<T>(
-        _ key: String,
-        _ path: WritableKeyPath<M,T>,
-        _ valueKP: WritableKeyPath<Field,T>,
-        _ decodeKP: WritableKeyPath<Field,((T)->Void)?>,
-        _ shouldEncode: @escaping () -> Bool = { true },
-        _ shouldDecode: @escaping () -> Bool = { true }) {
-        
-        var field = Field(key: key)
-        field.shouldEncode = shouldEncode
-        field.shouldDecode = shouldDecode
-        field[keyPath: valueKP] = model[keyPath: path]
-        field[keyPath: decodeKP] = { self.model[keyPath: path] = $0 }
-        field.referencingInternalModel = true
-        fields.append(field)
+        _ path: WritableKeyPath<S.Model,Type>,
+        shouldEncode: @autoclosure @escaping () -> Bool = true,
+        shouldDecode: @autoclosure @escaping () -> Bool = true
+    ) throws {
+        try self.field(
+            key,
+            modelHolder.model[keyPath: path],
+            { self.modelHolder.model[keyPath: path] = $0 },
+            shouldEncode: shouldEncode,
+            shouldDecode: shouldDecode
+        )
     }
 }
 
@@ -157,11 +69,11 @@ public class FieldBuilder<M> {
 public struct SideLoadedResourceBuilder {
     var resources: [Resource] = []
     
-    mutating public func add(_ resource: CanMakeSerializer) {
+    mutating public func add(_ resource: SerializerProducer) {
         resources.append(Resource(resource))
     }
     
-    mutating public func add(_ _resources: [CanMakeSerializer]) {
+    mutating public func add(_ _resources: [SerializerProducer]) {
         for resource in _resources {
             resources.append(Resource(resource))
         }

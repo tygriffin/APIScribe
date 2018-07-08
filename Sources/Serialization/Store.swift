@@ -47,7 +47,7 @@ extension Dictionary where Key == String, Value == [String: Storable] {
      Adds given serializer's model and side-loaded resources to the Store,
      unless already added.
      */
-    mutating func gather(serializer: BaseSerializer) {
+    mutating func gather(serializer: ResourceSerializer) {
         self.add(storable: serializer)
         
         var builder = SideLoadedResourceBuilder()
