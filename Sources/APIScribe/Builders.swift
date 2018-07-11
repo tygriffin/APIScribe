@@ -68,7 +68,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
-        try self.field(key, nil, decoder, shouldEncode: false)
+        try self.field(key, nil, decoder, shouldEncode: false, shouldDecode: shouldDecode)
     }
     
     // MARK: KeyPath conveniences

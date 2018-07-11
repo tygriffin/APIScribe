@@ -11,6 +11,7 @@ struct Kid {
     var name = ""
     var age: Int = 0
     var hobbies: [String] = []
+    var nickName = "" // WritableKeyPath
     
     func pets() -> [Pet] {
         return [
@@ -81,6 +82,7 @@ final class KidSerializer : Serializer {
         try b.field("name", \.name)
         try b.readOnly("age", \.age)
         try b.readOnly("hobbies", \.hobbies, shouldEncode: self.shouldEncodeHobbies)
+        try b.writeOnly("nickName", \.nickName, shouldDecode: false)
     }
     
     var shouldEncodeHobbies: Bool {
@@ -266,7 +268,7 @@ final class SerializationTests: XCTestCase {
     
     func testSerialization() throws {
             
-        let kid = Kid(id: 1, name: "Sara", age: 10, hobbies: ["baseball"])
+        let kid = Kid(id: 1, name: "Sara", age: 10, hobbies: ["baseball"], nickName: "")
         let serializer = kid.makeSerializer()
 
         let jsonEncoder = JSONEncoder()
@@ -457,7 +459,7 @@ final class SerializationTests: XCTestCase {
     func testContextIsPassedToEmbeddedResources() throws {
         let pet = Pet(id: 4, type: .doggy, name: "Judge Dredd", age: 7, whiskers: true, adoptedAt: Date())
         let petSerializer = pet.makeSerializer(in: nil)
-        petSerializer.kid = Kid(id: 88, name: "Kimmy", age: 13, hobbies: ["podcasting"])
+        petSerializer.kid = Kid(id: 88, name: "Kimmy", age: 13, hobbies: ["podcasting"], nickName: "")
         
         let jsonEncoder = JSONEncoder()
         var json = try jsonEncoder.encode(petSerializer)
@@ -478,6 +480,22 @@ final class SerializationTests: XCTestCase {
         XCTAssertEqual(obj?.deepGet("pet", "4", "kid", "hobbies") as? [String], ["podcasting"])
     }
     
+    func testReadOnlyWritableKeyPath() throws {
+        let json = """
+            {
+                "id": 4,
+                "name": "Taro",
+                "nickName": "Jumpin' Jack"
+            }
+            """.data(using: .utf8)!
+        
+        let jsonDecoder = JSONDecoder()
+        let serializer = try jsonDecoder.decode(KidSerializer.self, from: json)
+        
+        XCTAssertEqual(serializer.model.name, "Taro")
+        XCTAssertEqual(serializer.model.nickName, "")
+    }
+    
     private func pretty(_ data: Data) throws {
         print(try data.prettyJSONString())
     }
@@ -495,6 +513,7 @@ final class SerializationTests: XCTestCase {
         ("testSerializationWithContext", testSerializationWithContext),
         ("testEmbeddedResource", testEmbeddedResource),
         ("testWriteOnlyEmbeddedResource", testWriteOnlyEmbeddedResource),
-        ("testContextIsPassedToEmbeddedResources", testContextIsPassedToEmbeddedResources)
+        ("testContextIsPassedToEmbeddedResources", testContextIsPassedToEmbeddedResources),
+        ("testReadOnlyWritableKeyPath", testReadOnlyWritableKeyPath),
     ]
 }
