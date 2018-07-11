@@ -1,4 +1,5 @@
 import XCTest
+import DeepTraverse
 @testable import Serialization
 
 //
@@ -8,6 +9,8 @@ struct Kid {
     var storeId: String { return "\(id!)" }
     var id: Int?
     var name = ""
+    var age: Int = 0
+    var hobbies: [String] = []
     
     func pets() -> [Pet] {
         return [
@@ -43,6 +46,7 @@ struct Pet {
 //
 class PetContext : Context {
     var withWhiskers = true
+    var contextForEmbeddedKid = true
 }
 
 extension Kid : Serializable {
@@ -67,7 +71,7 @@ extension Pet : Serializable {
 //
 // Serializers
 //
-final class KidSerializer : Serializer {
+final class KidSerializer : Serializer, Deserializer {
     
     func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
         b.add(model.pets())
@@ -75,6 +79,15 @@ final class KidSerializer : Serializer {
     
     func makeFields(builder b: inout FieldBuilder<KidSerializer>) throws {
         try b.field("name", \.name)
+        try b.readOnly("age", \.age)
+        try b.readOnly("hobbies", \.hobbies, shouldEncode: self.shouldEncodeHobbies)
+    }
+    
+    var shouldEncodeHobbies: Bool {
+        if let context = self.context as? PetContext {
+            return context.contextForEmbeddedKid
+        }
+        return false
     }
     
     static var type = "kid"
@@ -88,6 +101,8 @@ final class PetSerializer : Serializer, Deserializer {
     var shouldDecodeAge = true
     var includeWhiskers = true
     var writableField = [""]
+    var kid: Kid?
+    var anotherKid: Kid?
     
     func makeFields(builder b: inout FieldBuilder<PetSerializer>) throws {
         try b.field("id", \.id)
@@ -103,6 +118,8 @@ final class PetSerializer : Serializer, Deserializer {
         try b.field("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
         try b.field("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
         try b.field("adoptedAt", \.adoptedAt)
+        try b.embeddedResource("kid", self.kid, { self.kid = $0 })
+        try b.writeOnlyEmbeddedResource("anotherKid", { self.anotherKid = $0 }, using: KidSerializer.self)
     }
     
     static var type = "pet"
@@ -249,7 +266,7 @@ final class SerializationTests: XCTestCase {
     
     func testSerialization() throws {
             
-        let kid = Kid(id: 1, name: "Sara")
+        let kid = Kid(id: 1, name: "Sara", age: 10, hobbies: ["baseball"])
         let serializer = kid.makeSerializer()
 
         let jsonEncoder = JSONEncoder()
@@ -284,7 +301,7 @@ final class SerializationTests: XCTestCase {
     }
     
     func testShouldEncode() throws {
-        let pet = Pet.init(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil)
+        let pet = Pet(id: 88, type: .kitty, name: "Jane", age: 9, whiskers: true, adoptedAt: nil)
         
         let serializer = pet.makeSerializer()
         
@@ -388,6 +405,79 @@ final class SerializationTests: XCTestCase {
         }
     }
     
+    func testEmbeddedResource() throws {
+        
+        let json = """
+            {
+                "id": 4,
+                "adoptedAt": null,
+                "kid": {
+                    "id": 8,
+                    "name": "Georgie",
+                    "age": 9
+                }
+            }
+            """.data(using: .utf8)!
+        
+        let jsonDecoder = JSONDecoder()
+        let serializer = try jsonDecoder.decode(PetSerializer.self, from: json)
+        
+        // Read only fields not deserialized
+        // Deserialization of embedded resource worked
+        XCTAssertEqual(serializer.kid?.name, "Georgie")
+        // Read only fields not deserialized, therefore KidSerializer was used
+        XCTAssertEqual(serializer.kid?.age, 0)
+    }
+    
+    func testWriteOnlyEmbeddedResource() throws {
+        
+        let json = """
+            {
+                "id": 4,
+                "adoptedAt": null,
+                "anotherKid": {
+                    "id": 8,
+                    "name": "Georgie",
+                    "age": 9
+                }
+            }
+            """.data(using: .utf8)!
+        
+        let jsonDecoder = JSONDecoder()
+        let serializer = try jsonDecoder.decode(PetSerializer.self, from: json)
+        
+        XCTAssertEqual(serializer.anotherKid?.name, "Georgie")
+        
+        let jsonEncoder = JSONEncoder()
+        let obj = try jsonEncoder.encode(serializer).toJSONObject() as? [String: Any]
+        XCTAssertNotNil(obj)
+        XCTAssertEqual(obj?.deepGet("pet", "4", "anotherKid", "id") as? Int, nil)
+    }
+    
+    func testContextIsPassedToEmbeddedResources() throws {
+        let pet = Pet(id: 4, type: .doggy, name: "Judge Dredd", age: 7, whiskers: true, adoptedAt: Date())
+        let petSerializer = pet.makeSerializer(in: nil)
+        petSerializer.kid = Kid(id: 88, name: "Kimmy", age: 13, hobbies: ["podcasting"])
+        
+        let jsonEncoder = JSONEncoder()
+        var json = try jsonEncoder.encode(petSerializer)
+        
+        try pretty(json)
+        
+        var obj = try json.toJSONObject() as? [String: Any]
+        XCTAssertNotNil(obj)
+        XCTAssertEqual(obj?.deepGet("pet", "4", "kid", "name") as? String, "Kimmy")
+        XCTAssertEqual(obj?.deepGet("pet", "4", "kid", "hobbies") as? [String], nil)
+        
+        let context = PetContext()
+        context.contextForEmbeddedKid = true
+        petSerializer.context = context
+
+        json = try jsonEncoder.encode(petSerializer)
+        obj = try json.toJSONObject() as? [String: Any]
+        XCTAssertEqual(obj?.deepGet("pet", "4", "kid", "hobbies") as? [String], ["podcasting"])
+    }
+    
     private func pretty(_ data: Data) throws {
         print(try data.prettyJSONString())
     }
@@ -403,5 +493,8 @@ final class SerializationTests: XCTestCase {
         ("testInfiniteLoop", testInfiniteLoop),
         ("testSerializeArray", testSerializeArray),
         ("testSerializationWithContext", testSerializationWithContext),
+        ("testEmbeddedResource", testEmbeddedResource),
+        ("testWriteOnlyEmbeddedResource", testWriteOnlyEmbeddedResource),
+        ("testContextIsPassedToEmbeddedResources", testContextIsPassedToEmbeddedResources)
     ]
 }

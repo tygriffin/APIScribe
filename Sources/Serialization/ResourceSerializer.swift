@@ -5,9 +5,11 @@
 //  Created by Taylor Griffin on 8/7/18.
 //
 
-public protocol ResourceSerializer : Storable {
-    
+public protocol ContextHolder {
     var context: Context? { get set }
+}
+
+public protocol ResourceSerializer : Storable, ContextHolder {
     init()
     func sideLoadResources(builder: inout SideLoadedResourceBuilder)
 }

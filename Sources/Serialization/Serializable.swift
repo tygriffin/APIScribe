@@ -21,7 +21,7 @@ public protocol SerializerProducer {
  resources on other models.
  */
 public protocol Serializable : SerializerProducer {
-    associatedtype ModelSerializer: ResourceSerializer
+    associatedtype ModelSerializer: ResourceSerializer, ModelHolder
     
     func makeSerializer(in context: Context?) -> ModelSerializer
 }

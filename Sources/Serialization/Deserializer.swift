@@ -11,7 +11,7 @@ import Foundation
  Models implementing this protocol can use instructions in Fields
  to apply input field-by-field to the model.
  */
-public protocol Deserializer : Decodable, ModelHolder {
+public protocol Deserializer : Decodable, ModelHolder, ContextHolder {
 
     /// Fields that contain decoding instructions
     func makeFields(builder: inout FieldBuilder<Self>) throws

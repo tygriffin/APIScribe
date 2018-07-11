@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "DeepTraverse",
+        "repositoryURL": "https://github.com/tygriffin/DeepTraverse",
+        "state": {
+          "branch": null,
+          "revision": "c9bc6c98e518b9aa0739c318665b0882819dad13",
+          "version": "1.0.0"
+        }
+      }
+    ]
+  },
+  "version": 1
+}

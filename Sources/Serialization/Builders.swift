@@ -10,16 +10,16 @@ import Foundation
 /**
  Convenient abstraction for building up fields.
  */
-public class FieldBuilder<S: ModelHolder> {
+public class FieldBuilder<S: ModelHolder & ContextHolder> {
     public typealias M = S.Model
     internal var readOnlyFields: [String] = []
-    private var modelHolder: S
+    private var serializer: S
     
     var encodingContainer: KeyedEncodingContainer<DynamicKey>?
     var decodingContainer: KeyedDecodingContainer<DynamicKey>?
     
     init(modelHolder: S) {
-        self.modelHolder = modelHolder
+        self.serializer = modelHolder
     }
     
     // MARK: Base field methods
@@ -81,8 +81,8 @@ public class FieldBuilder<S: ModelHolder> {
     ) throws {
         try self.field(
             key,
-            modelHolder.model[keyPath: path],
-            { self.modelHolder.model[keyPath: path] = $0 },
+            serializer.model[keyPath: path],
+            { self.serializer.model[keyPath: path] = $0 },
             shouldEncode: shouldEncode,
             shouldDecode: shouldDecode
         )
@@ -95,7 +95,7 @@ public class FieldBuilder<S: ModelHolder> {
         ) throws {
         try self.readOnly(
             key,
-            modelHolder.model[keyPath: path],
+            serializer.model[keyPath: path],
             shouldEncode: shouldEncode
         )
     }
@@ -108,8 +108,62 @@ public class FieldBuilder<S: ModelHolder> {
         
         try self.writeOnly(
             key,
-            { self.modelHolder.model[keyPath: path] = $0 },
+            { self.serializer.model[keyPath: path] = $0 },
             shouldDecode: false
+        )
+    }
+    
+    // MARK: Embedded resource methods
+    
+    public func embeddedResource<Type: Serializable>(
+        _ key: String,
+        _ value: Type?,
+        _ decoder: @escaping (Type) -> Void,
+        shouldEncode: @autoclosure @escaping () -> Bool = true,
+        shouldDecode: @autoclosure @escaping () -> Bool = true
+        ) throws where Type.ModelSerializer: Serializer & Deserializer {
+        
+        let serializer = value?.makeSerializer(in: self.serializer.context)
+        try self.field(
+            key,
+            serializer,
+            { if let v = $0.model as? Type { decoder(v) } },
+            shouldEncode: shouldEncode(),
+            shouldDecode: shouldDecode()
+        )
+    }
+    
+    public func readOnlyEmbeddedResource<Type: Serializable>(
+        _ key: String,
+        _ value: Type?,
+        shouldEncode: @autoclosure @escaping () -> Bool = true
+        ) throws where Type.ModelSerializer: Serializer & Deserializer {
+        
+        try self.embeddedResource(
+            key,
+            value,
+            { _ in },
+            shouldEncode: shouldEncode(),
+            shouldDecode: false
+        )
+    }
+    
+    public func writeOnlyEmbeddedResource<S: Deserializer & Serializer>(
+        _ key: String,
+        _ decoder: @escaping (S.Model) -> Void,
+        using deserializerType: S.Type,
+        shouldDecode: @autoclosure @escaping () -> Bool = true
+        ) throws {
+
+        var deserializer = deserializerType.init()
+        deserializer.context = self.serializer.context
+
+        try self.field(
+            key,
+            deserializer,
+            { decoder($0.model) },
+            shouldEncode: false,
+            shouldDecode: shouldDecode()
         )
     }
 }
