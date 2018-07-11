@@ -1,6 +1,6 @@
 //
 //  Deserializer.swift
-//  Serialization
+//  APIScribe
 //
 //  Created by Taylor Griffin on 19/5/18.
 //

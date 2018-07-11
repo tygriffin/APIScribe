@@ -1,6 +1,6 @@
 //
 //  ArraySerializer.swift
-//  Serialization
+//  APIScribe
 //
 //  Created by Taylor Griffin on 28/5/18.
 //

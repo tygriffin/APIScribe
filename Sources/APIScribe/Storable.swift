@@ -1,6 +1,6 @@
 //
 //  Storable.swift
-//  Serialization
+//  APIScribe
 //
 //  Created by Taylor Griffin on 12/5/18.
 //

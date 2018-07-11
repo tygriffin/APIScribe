@@ -1,6 +1,6 @@
 //
 //  DynamicKey.swift
-//  Serialization
+//  APIScribe
 //
 //  Created by Taylor Griffin on 20/5/18.
 //

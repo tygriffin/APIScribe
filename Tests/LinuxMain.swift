@@ -1,7 +1,7 @@
 import XCTest
 
-import SerializationTests
+import APIScribeTests
 
 var tests = [XCTestCaseEntry]()
-tests += SerializationTests.allTests()
+tests += APIScribeTests.allTests()
 XCTMain(tests)

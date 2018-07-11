@@ -1,6 +1,6 @@
 //
 //  ResourceSerializer.swift
-//  Serialization
+//  APIScribe
 //
 //  Created by Taylor Griffin on 8/7/18.
 //

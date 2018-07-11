@@ -1,12 +1,12 @@
 //
 //  StoreTests.swift
-//  SerializationTests
+//  APIScribeTests
 //
 //  Created by Taylor Griffin on 20/5/18.
 //
 
 import XCTest
-@testable import Serialization
+@testable import APIScribe
 
 struct SomeStorable : Storable {
     static var type = "somestorable"

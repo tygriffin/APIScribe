@@ -1,6 +1,6 @@
 import XCTest
 import DeepTraverse
-@testable import Serialization
+@testable import APIScribe
 
 //
 // Models

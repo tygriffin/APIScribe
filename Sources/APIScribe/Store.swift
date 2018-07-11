@@ -1,6 +1,6 @@
 //
 //  Store.swift
-//  Serialization
+//  APIScribe
 //
 //  Created by Taylor Griffin on 13/5/18.
 //
