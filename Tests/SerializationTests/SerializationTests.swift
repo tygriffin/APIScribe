@@ -87,6 +87,7 @@ final class PetSerializer : Serializer, Deserializer {
     
     var shouldDecodeAge = true
     var includeWhiskers = true
+    var writableField = [""]
     
     func makeFields(builder b: inout FieldBuilder<PetSerializer>) throws {
         try b.field("id", \.id)
@@ -96,8 +97,8 @@ final class PetSerializer : Serializer, Deserializer {
             { self.model.type = PetType(rawValue: $0)! }
         )
         try b.field("name", model.name, { self.model.name = $0 })
-        try b.field("somearray", ["I", "am", "an", "array"], { _ in })
-        try b.readOnly("someobj", ["Hello": 1])
+        try b.writeOnly("writableField", { self.writableField = $0 })
+        try b.readOnly("abilities", ["landsOnAllFours": model.landsOnAllFours])
         try b.field("name", \.name)
         try b.field("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
         try b.field("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
@@ -187,15 +188,18 @@ final class SerializationTests: XCTestCase {
                 "id": 99,
                 "name": "Rover",
                 "type": "doggy",
-                "age": 2
+                "age": 2,
+                "writableField": ["this", "worked"]
             }
             """.data(using: .utf8)!
         
-        let pet = try JSONDecoder().decode(PetSerializer.self, from: json).model
+        let petSerializer = try JSONDecoder().decode(PetSerializer.self, from: json)
+        let pet = petSerializer.model
         XCTAssertEqual(pet.id, 99)
         XCTAssertEqual(pet.name, "Rover")
         XCTAssertEqual(pet.type, .doggy)
         XCTAssertEqual(pet.age, 2)
+        XCTAssertEqual(petSerializer.writableField, ["this", "worked"])
     }
     
     func testDeserializeToExistingModel() throws {

@@ -22,6 +22,8 @@ public class FieldBuilder<S: ModelHolder> {
         self.modelHolder = modelHolder
     }
     
+    // MARK: Base field methods
+    
     public func field<Type: Codable>(
         _ key: String,
         _ value: Type?,
@@ -60,6 +62,17 @@ public class FieldBuilder<S: ModelHolder> {
         try self.field(key, value, { _ in }, shouldEncode: shouldEncode, shouldDecode: false)
     }
     
+    public func writeOnly<Type: Codable>(
+        _ key: String,
+        _ decoder: @escaping (Type) -> Void,
+        shouldDecode: @autoclosure @escaping () -> Bool = true
+        ) throws {
+        
+        try self.field(key, nil, decoder, shouldEncode: false)
+    }
+    
+    // MARK: KeyPath conveniences
+    
     public func field<Type: Codable>(
         _ key: String,
         _ path: WritableKeyPath<S.Model,Type>,
@@ -80,11 +93,22 @@ public class FieldBuilder<S: ModelHolder> {
         _ path: KeyPath<S.Model,Type>,
         shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
-        try self.field(
+        try self.readOnly(
             key,
             modelHolder.model[keyPath: path],
-            { _ in },
-            shouldEncode: shouldEncode,
+            shouldEncode: shouldEncode
+        )
+    }
+    
+    public func writeOnly<Type: Codable>(
+        _ key: String,
+        _ path: WritableKeyPath<S.Model,Type>,
+        shouldDecode: @autoclosure @escaping () -> Bool = true
+        ) throws {
+        
+        try self.writeOnly(
+            key,
+            { self.modelHolder.model[keyPath: path] = $0 },
             shouldDecode: false
         )
     }
