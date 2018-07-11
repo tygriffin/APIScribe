@@ -109,7 +109,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         try self.writeOnly(
             key,
             { self.serializer.model[keyPath: path] = $0 },
-            shouldDecode: false
+            shouldDecode: shouldDecode
         )
     }
     
