@@ -11,14 +11,14 @@ import Foundation
  Models implementing this protocol can use instructions in Fields
  to apply input field-by-field to the model.
  */
-public protocol Deserializer : Decodable, ModelHolder, ContextHolder {
+public protocol DecodeSerializer : Decodable, ModelHolder, ContextHolder {
 
     /// Fields that contain decoding instructions
     func makeFields(builder: inout FieldBuilder<Self>) throws
     init()
 }
 
-extension Deserializer {
+extension DecodeSerializer {
     
     /// Key for pulling a deserializer out of user info.
     /// Useful for when you want non-default values in the deserializer properties
@@ -50,7 +50,9 @@ extension Deserializer {
         
         if
             let key = Self.modelInfoKey,
-            let model = decoder.userInfo[key] as? Model {
+            let model = decoder.userInfo[key] as? Model,
+            // This must be the top Storable in the tree in order to support update
+            decoder.codingPath.isEmpty {
             
             self.model = model
         }

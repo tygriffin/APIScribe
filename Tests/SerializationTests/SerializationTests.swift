@@ -71,7 +71,7 @@ extension Pet : Serializable {
 //
 // Serializers
 //
-final class KidSerializer : Serializer, Deserializer {
+final class KidSerializer : Serializer {
     
     func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
         b.add(model.pets())
@@ -96,7 +96,7 @@ final class KidSerializer : Serializer, Deserializer {
     var storeId = \Kid.storeId
 }
 
-final class PetSerializer : Serializer, Deserializer {
+final class PetSerializer : Serializer {
     
     var shouldDecodeAge = true
     var includeWhiskers = true

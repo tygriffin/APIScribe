@@ -121,7 +121,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ decoder: @escaping (Type) -> Void,
         shouldEncode: @autoclosure @escaping () -> Bool = true,
         shouldDecode: @autoclosure @escaping () -> Bool = true
-        ) throws where Type.ModelSerializer: Serializer & Deserializer {
+        ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
         let serializer = value?.makeSerializer(in: self.serializer.context)
         try self.field(
@@ -137,7 +137,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ key: String,
         _ value: Type?,
         shouldEncode: @autoclosure @escaping () -> Bool = true
-        ) throws where Type.ModelSerializer: Serializer & Deserializer {
+        ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
         try self.embeddedResource(
             key,
@@ -148,7 +148,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         )
     }
     
-    public func writeOnlyEmbeddedResource<S: Deserializer & Serializer>(
+    public func writeOnlyEmbeddedResource<S: DecodeSerializer & EncodeSerializer>(
         _ key: String,
         _ decoder: @escaping (S.Model) -> Void,
         using deserializerType: S.Type,
