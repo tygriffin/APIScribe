@@ -4,7 +4,7 @@ import XCTest
 //
 // Models
 //
-struct Owner {
+struct Kid {
     var storeId: String { return "\(id!)" }
     var id: Int?
     var name = ""
@@ -45,9 +45,9 @@ class PetContext : Context {
     var withWhiskers = true
 }
 
-extension Owner : Serializable {
-    func makeSerializer(in context: Context? = nil) -> OwnerSerializer {
-        return OwnerSerializer(model: self, in: context)
+extension Kid : Serializable {
+    func makeSerializer(in context: Context? = nil) -> KidSerializer {
+        return KidSerializer(model: self, in: context)
     }
 }
 
@@ -67,20 +67,20 @@ extension Pet : Serializable {
 //
 // Serializers
 //
-final class OwnerSerializer : Serializer {
+final class KidSerializer : Serializer {
     
     func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
         b.add(model.pets())
     }
     
-    func makeFields(builder b: inout FieldBuilder<OwnerSerializer>) throws {
+    func makeFields(builder b: inout FieldBuilder<KidSerializer>) throws {
         try b.field("name", \.name)
     }
     
-    static var type = "owner"
-    var model = Owner()
+    static var type = "kid"
+    var model = Kid()
     var context: Context?
-    var storeId = \Owner.storeId
+    var storeId = \Kid.storeId
 }
 
 final class PetSerializer : Serializer, Deserializer {
@@ -97,7 +97,7 @@ final class PetSerializer : Serializer, Deserializer {
         )
         try b.field("name", model.name, { self.model.name = $0 })
         try b.field("somearray", ["I", "am", "an", "array"], { _ in })
-        try b.field("someobj", ["Hello": 1], { _ in })
+        try b.readOnly("someobj", ["Hello": 1])
         try b.field("name", \.name)
         try b.field("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
         try b.field("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
@@ -245,8 +245,8 @@ final class SerializationTests: XCTestCase {
     
     func testSerialization() throws {
             
-        let owner = Owner(id: 1, name: "Sara")
-        let serializer = owner.makeSerializer()
+        let kid = Kid(id: 1, name: "Sara")
+        let serializer = kid.makeSerializer()
 
         let jsonEncoder = JSONEncoder()
         let json = try jsonEncoder.encode(serializer)
@@ -254,8 +254,8 @@ final class SerializationTests: XCTestCase {
         
         if let obj = obj as? [String: [String: [String: Any]]] {
             XCTAssertEqual(obj.count, 2)
-            XCTAssertEqual(obj["owner"]?.count, 1)
-            XCTAssertEqual(obj["owner"]?["1"]?["name"] as? String, "Sara")
+            XCTAssertEqual(obj["kid"]?.count, 1)
+            XCTAssertEqual(obj["kid"]?["1"]?["name"] as? String, "Sara")
             XCTAssertEqual(obj["pet"]?.count, 2)
             XCTAssertEqual(obj["pet"]?["1"]?["name"] as? String, "Kathleen")
             XCTAssertEqual(obj["pet"]?["1"]?["type"] as? String, "doggy")

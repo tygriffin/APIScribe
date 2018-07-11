@@ -46,10 +46,11 @@ extension Serializer {
     }
     
     private func encodeAsLeaf(to encoder: Encoder) throws {
-        let container = encoder.container(keyedBy: DynamicKey.self)
+        var container = encoder.container(keyedBy: DynamicKey.self)
         var builder = FieldBuilder<Self>(modelHolder: self)
         builder.encodingContainer = container
         try makeFields(builder: &builder)
+        try container.encode(builder.readOnlyFields, forKey: DynamicKey(stringValue: "_readOnly"))
     }
     
     public var storeIdString: String {

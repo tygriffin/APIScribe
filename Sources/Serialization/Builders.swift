@@ -12,6 +12,7 @@ import Foundation
  */
 public class FieldBuilder<S: ModelHolder> {
     public typealias M = S.Model
+    internal var readOnlyFields: [String] = []
     private var modelHolder: S
     
     var encodingContainer: KeyedEncodingContainer<DynamicKey>?
@@ -34,6 +35,9 @@ public class FieldBuilder<S: ModelHolder> {
         if var container = encodingContainer {
             if shouldEncode() {
                 try container.encode(value, forKey: codingKey)
+                if !shouldDecode() {
+                    readOnlyFields.append(key)
+                }
             }
         }
         
@@ -45,6 +49,15 @@ public class FieldBuilder<S: ModelHolder> {
                 } catch DecodingError.keyNotFound(_, _) {}
             }
         }
+    }
+    
+    public func readOnly<Type: Codable>(
+        _ key: String,
+        _ value: Type?,
+        shouldEncode: @autoclosure @escaping () -> Bool = true
+        ) throws {
+        
+        try self.field(key, value, { _ in }, shouldEncode: shouldEncode, shouldDecode: false)
     }
     
     public func field<Type: Codable>(
@@ -59,6 +72,20 @@ public class FieldBuilder<S: ModelHolder> {
             { self.modelHolder.model[keyPath: path] = $0 },
             shouldEncode: shouldEncode,
             shouldDecode: shouldDecode
+        )
+    }
+    
+    public func readOnly<Type: Codable>(
+        _ key: String,
+        _ path: KeyPath<S.Model,Type>,
+        shouldEncode: @autoclosure @escaping () -> Bool = true
+        ) throws {
+        try self.field(
+            key,
+            modelHolder.model[keyPath: path],
+            { _ in },
+            shouldEncode: shouldEncode,
+            shouldDecode: false
         )
     }
 }
