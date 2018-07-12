@@ -41,7 +41,7 @@ extension EncodeSerializer {
     
     private func encodeAsPrimary(to encoder: Encoder) throws {
         var store = Store()
-        store.gather(serializer: self)
+        try store.gather(serializer: self)
         try store.encode(to: encoder)
     }
     

@@ -7,7 +7,7 @@
 
 public protocol ResourceSerializer : Storable, ContextHolder {
     init()
-    func sideLoadResources(builder: inout SideLoadedResourceBuilder)
+    func sideLoadResources(builder: inout SideLoadedResourceBuilder) throws
 }
 
 extension ResourceSerializer {
@@ -17,6 +17,6 @@ extension ResourceSerializer {
     }
     
     // Side loading resources is optional
-    public func sideLoadResources(builder: inout SideLoadedResourceBuilder) {}
+    public func sideLoadResources(builder: inout SideLoadedResourceBuilder) throws {}
 }
 

@@ -47,11 +47,11 @@ extension Dictionary where Key == String, Value == [String: Storable] {
      Adds given serializer's model and side-loaded resources to the Store,
      unless already added.
      */
-    mutating func gather(serializer: ResourceSerializer) {
+    mutating func gather(serializer: ResourceSerializer) throws {
         self.add(storable: serializer)
         
         var builder = SideLoadedResourceBuilder()
-        serializer.sideLoadResources(builder: &builder)
+        try serializer.sideLoadResources(builder: &builder)
         
         for resource in builder.resources {
             // TODO: Alternatively, pass in a serializer here to use instead of default
@@ -61,7 +61,7 @@ extension Dictionary where Key == String, Value == [String: Storable] {
                 key: resourceSerializer.storeKey,
                 id: resourceSerializer.storeIdString
             ) {
-                self.gather(serializer: resourceSerializer)
+                try self.gather(serializer: resourceSerializer)
             }
         }
     }
