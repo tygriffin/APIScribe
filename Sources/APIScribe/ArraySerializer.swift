@@ -11,11 +11,15 @@
 public struct ArraySerializer: Encodable {
     public var serializers: [ResourceSerializer]
     
+    public init(serializers: [ResourceSerializer]) {
+        self.serializers = serializers
+    }
+    
     public func encode(to encoder: Encoder) throws {
         var store = Store()
         
         for serializer in serializers {
-            store.gather(serializer: serializer)
+            try store.gather(serializer: serializer)
         }
         
         try store.encode(to: encoder)

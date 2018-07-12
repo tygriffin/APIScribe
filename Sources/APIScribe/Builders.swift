@@ -53,22 +53,37 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         }
     }
     
-    public func readOnly<Type: Codable>(
+    public func readOnly<Type: Encodable>(
         _ key: String,
         _ value: Type?,
         shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
-        try self.field(key, value, { _ in }, shouldEncode: shouldEncode, shouldDecode: false)
+        let codingKey = DynamicKey(stringValue: key)
+        
+        if var container = encodingContainer {
+            if shouldEncode() {
+                try container.encode(value, forKey: codingKey)
+            }
+        }
     }
     
-    public func writeOnly<Type: Codable>(
+    public func writeOnly<Type: Decodable>(
         _ key: String,
         _ decoder: @escaping (Type) -> Void,
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
-        try self.field(key, nil, decoder, shouldEncode: false, shouldDecode: shouldDecode)
+        let codingKey = DynamicKey(stringValue: key)
+        
+        if let container = decodingContainer {
+            if shouldDecode() {
+                do {
+                    let nextValue = try container.decode(Type.self, forKey: codingKey)
+                    decoder(nextValue)
+                } catch DecodingError.keyNotFound(_, _) {}
+            }
+        }
     }
     
     // MARK: KeyPath conveniences
@@ -88,7 +103,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         )
     }
     
-    public func readOnly<Type: Codable>(
+    public func readOnly<Type: Encodable>(
         _ key: String,
         _ path: KeyPath<S.Model,Type>,
         shouldEncode: @autoclosure @escaping () -> Bool = true
@@ -100,7 +115,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         )
     }
     
-    public func writeOnly<Type: Codable>(
+    public func writeOnly<Type: Decodable>(
         _ key: String,
         _ path: WritableKeyPath<S.Model,Type>,
         shouldDecode: @autoclosure @escaping () -> Bool = true
