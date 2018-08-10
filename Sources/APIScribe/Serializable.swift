@@ -20,7 +20,7 @@ public protocol SerializerProducer {
  hence, be serialized. These models can also be included as side-loaded
  resources on other models.
  */
-public protocol Serializable : SerializerProducer {
+public protocol Serializable : SerializerProducer, ModelIdentifiable {
     associatedtype ModelSerializer: ResourceSerializer, ModelHolder
     
     func makeSerializer(in context: Context?) -> ModelSerializer

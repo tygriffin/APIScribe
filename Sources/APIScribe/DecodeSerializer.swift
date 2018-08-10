@@ -11,10 +11,7 @@ import Foundation
  Models implementing this protocol can use instructions in Fields
  to apply input field-by-field to the model.
  */
-public protocol DecodeSerializer : Decodable, ModelHolder, ContextHolder {
-
-    /// Fields that contain decoding instructions
-    func makeFields(builder: inout FieldBuilder<Self>) throws
+public protocol DecodeSerializer : Decodable, FieldMaker {
     init()
 }
 
@@ -32,6 +29,11 @@ extension DecodeSerializer {
     /// an existing model.
     public static var modelInfoKey: CodingUserInfoKey? {
         return CodingUserInfoKey(rawValue: "serialization.model")
+    }
+    
+    /// Key for pulling a context out of user info.
+    public static var contextInfoKey: CodingUserInfoKey? {
+        return CodingUserInfoKey(rawValue: "serialization.context")
     }
     
     /**
@@ -55,6 +57,13 @@ extension DecodeSerializer {
             decoder.codingPath.isEmpty {
             
             self.model = model
+        }
+        
+        if
+            let key = Self.contextInfoKey,
+            let context = decoder.userInfo[key] as? Context {
+            
+            self.context = context
         }
         
         let container = try decoder.container(keyedBy: DynamicKey.self)

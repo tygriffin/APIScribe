@@ -10,13 +10,7 @@
  its side-loaded resources, and acts as a kind of context for
  conditional serializing.
  */
-public protocol EncodeSerializer : ResourceSerializer, ModelHolder {
-
-    // The namespace for like models in the output
-    var storeId: KeyPath<Model, String> { get }
-    // Instructions for serialization / deserialization
-    func makeFields(builder: inout FieldBuilder<Self>) throws
-    
+public protocol EncodeSerializer : ResourceSerializer, FieldMaker {
     init(model: Model, in context: Context?)
 }
 
@@ -33,7 +27,7 @@ extension EncodeSerializer {
         if encoder.codingPath.isEmpty {
             try encodeAsPrimary(to: encoder)
         }
-        // ... otherwise, this is a leaf in a serialization started by another serializer.
+            // ... otherwise, this is a leaf in a serialization started by another serializer.
         else {
             try encodeAsLeaf(to: encoder)
         }
@@ -53,7 +47,7 @@ extension EncodeSerializer {
         try container.encode(builder.readOnlyFields, forKey: DynamicKey(stringValue: "_readOnly"))
     }
     
-    public var storeIdString: String {
-        return model[keyPath: storeId]
+    public var storeId: String {
+        return model.storeId
     }
 }

@@ -5,14 +5,25 @@
 //  Created by Taylor Griffin on 12/5/18.
 //
 
+public protocol StoreKeyIdentifiable {
+    static var storeKey: String { get }
+    var storeKey: String { get }
+}
+
+extension StoreKeyIdentifiable {
+    public var storeKey: String {
+        return Self.storeKey
+    }
+}
+
+public protocol StoreIdIdentifiable {
+    var storeId: String { get }
+}
+
 /**
  Storables are leafs in the Store.
  */
-public protocol Storable : Encodable {
-    static var type: String { get }
-    var storeKey: String { get }
-    var storeIdString: String { get }
-}
+public protocol Storable : Encodable, StoreKeyIdentifiable, StoreIdIdentifiable {}
 
 /**
  Type-erased Storable.
@@ -28,3 +39,4 @@ struct AnyStorable : Encodable {
         try base.encode(to: encoder)
     }
 }
+

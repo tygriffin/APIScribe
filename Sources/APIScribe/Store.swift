@@ -35,11 +35,11 @@ extension Dictionary where Key == String, Value == [String: Storable] {
         
         if self.index(forKey: storable.storeKey) == nil {
             var dict = Dictionary<String, Storable>()
-            dict[storable.storeIdString] = storable
+            dict[storable.storeId] = storable
             self[storable.storeKey] = dict
         }
         else {
-            self[storable.storeKey]?[storable.storeIdString] = storable
+            self[storable.storeKey]?[storable.storeId] = storable
         }
     }
     
@@ -59,8 +59,8 @@ extension Dictionary where Key == String, Value == [String: Storable] {
             
             if !self.isAlreadySerialized(
                 key: resourceSerializer.storeKey,
-                id: resourceSerializer.storeIdString
-            ) {
+                id: resourceSerializer.storeId
+                ) {
                 try self.gather(serializer: resourceSerializer)
             }
         }

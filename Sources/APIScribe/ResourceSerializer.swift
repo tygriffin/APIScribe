@@ -5,18 +5,15 @@
 //  Created by Taylor Griffin on 8/7/18.
 //
 
-public protocol ResourceSerializer : Storable, ContextHolder {
+public protocol ResourceSerializer : ContextHolder, Storable, ModelIdentifiable {
     init()
     func sideLoadResources(builder: inout SideLoadedResourceBuilder) throws
 }
 
 extension ResourceSerializer {
     
-    public var storeKey: String {
-        return Self.type
-    }
-    
     // Side loading resources is optional
     public func sideLoadResources(builder: inout SideLoadedResourceBuilder) throws {}
+    
 }
 
