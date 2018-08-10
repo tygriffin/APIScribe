@@ -9,10 +9,9 @@ import XCTest
 @testable import APIScribe
 
 struct SomeStorable : Storable {
-    static var type = "somestorable"
+    static var storeKey = "somekey"
     
-    var storeKey = "somestorablekey"
-    var storeIdString = "somestorableid"
+    var storeId = "someid"
     
     var value = ""
 }
@@ -39,11 +38,11 @@ final class StoreTests: XCTestCase {
         var store = Store()
         
         store.add(storable: SomeStorable(
-            storeKey: "keyone",
-            storeIdString: "idone",
-            value: "One"))
+            storeId: "idone",
+            value: "One")
+        )
         
-        if let storable = store["keyone"]?["idone"] as? SomeStorable {
+        if let storable = store["somekey"]?["idone"] as? SomeStorable {
             XCTAssertEqual(storable.value, "One")
         } else {
             XCTFail("Storable not added")
@@ -51,25 +50,24 @@ final class StoreTests: XCTestCase {
         
         // Using the same key and id will overwrite existing value if it exists
         store.add(storable: SomeStorable(
-            storeKey: "keyone",
-            storeIdString: "idone",
-            value: "Uno"))
+            storeId: "idone",
+            value: "Uno")
+        )
         
-        if let storable = store["keyone"]?["idone"] as? SomeStorable {
+        if let storable = store["somekey"]?["idone"] as? SomeStorable {
             XCTAssertEqual(storable.value, "Uno")
         } else {
             XCTFail("Storable not added")
         }
         
         // Adding a value to the same key, different id
-        XCTAssertEqual(store["keyone"]?.count, 1)
+        XCTAssertEqual(store["somekey"]?.count, 1)
         store.add(storable: SomeStorable(
-            storeKey: "keyone",
-            storeIdString: "idtwo",
+            storeId: "idtwo",
             value: "Two"))
         
-        XCTAssertEqual(store["keyone"]?.count, 2)
-        if let storable = store["keyone"]?["idtwo"] as? SomeStorable {
+        XCTAssertEqual(store["somekey"]?.count, 2)
+        if let storable = store["somekey"]?["idtwo"] as? SomeStorable {
             XCTAssertEqual(storable.value, "Two")
         } else {
             XCTFail("Storable not added")
@@ -77,13 +75,13 @@ final class StoreTests: XCTestCase {
         
         // Adding a value to a different key
         XCTAssertEqual(store.count, 1)
+        SomeStorable.storeKey = "differentkey"
         store.add(storable: SomeStorable(
-            storeKey: "keytwo",
-            storeIdString: "idone",
+            storeId: "idone",
             value: "Second key, first id"))
         
         XCTAssertEqual(store.count, 2)
-        if let storable = store["keytwo"]?["idone"] as? SomeStorable {
+        if let storable = store["differentkey"]?["idone"] as? SomeStorable {
             XCTAssertEqual(storable.value, "Second key, first id")
         } else {
             XCTFail("Storable not added")

@@ -73,7 +73,7 @@ extension Pet : Serializable {
 // Serializers
 //
 final class KidSerializer : Serializer {
-    
+
     func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
         b.add(model.pets())
     }
@@ -92,10 +92,9 @@ final class KidSerializer : Serializer {
         return false
     }
     
-    static var type = "kid"
+    static var storeKey = "kid"
     var model = Kid()
     var context: Context?
-    var storeId = \Kid.storeId
 }
 
 final class PetSerializer : Serializer {
@@ -124,10 +123,9 @@ final class PetSerializer : Serializer {
         try b.writeOnlyEmbeddedResource("anotherKid", { self.anotherKid = $0 }, using: KidSerializer.self)
     }
     
-    static var type = "pet"
+    static var storeKey = "pet"
     var model = Pet()
     var context: Context?
-    var storeId = \Pet.storeId
 }
 
 
@@ -176,10 +174,9 @@ final class FruitSerializer : Serializer {
         try b.field("name", \.name)
     }
     
-    static var type = "fruit"
+    static var storeKey = "fruit"
     var model = Fruit()
     var context: Context?
-    var storeId = \Fruit.storeId
 }
 
 final class LoopSerializer : Serializer {
@@ -192,10 +189,9 @@ final class LoopSerializer : Serializer {
         try b.field("name", \.name)
     }
     
-    static var type = "loop"
+    static var storeKey = "loop"
     var model = Loop()
     var context: Context?
-    var storeId = \Loop.storeId
 }
 
 final class SerializationTests: XCTestCase {
