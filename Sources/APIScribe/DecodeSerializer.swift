@@ -26,10 +26,13 @@ extension DecodeSerializer {
     /// - Returns: The model that this Serializer decodes.
     public static func decode<M>(
         data: Data,
-        using decoder: JSONDecoder = JSONDecoder()
+        using decoder: JSONDecoder = JSONDecoder(),
+        in context: Context
         ) throws -> M where M == Model {
         
-        return try decoder.decode(Self.self, from: data).model
+        var instance = Self.init()
+        instance.context = context
+        return try instance.decode(data: data, using: decoder)
     }
     
     /// Decodes data with respect to the state of this Serializer.
@@ -51,10 +54,7 @@ extension DecodeSerializer {
         }
         decoder.userInfo = [key: self]
         
-        return try Self.decode(
-            data: data,
-            using: decoder
-        )
+        return try decoder.decode(Self.self, from: data).model
     }
     
     /// Key for pulling a deserializer out of user info.
