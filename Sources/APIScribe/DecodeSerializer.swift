@@ -17,11 +17,32 @@ public protocol DecodeSerializer : Decodable, FieldMaker {
 
 extension DecodeSerializer {
     
-    public func decode<M>(
+    
+    /// Decodes data using the default state (static) state of this Serializer.
+    ///
+    /// - Parameters:
+    ///   - data: Incoming data.
+    ///   - decoder: Optional decoder. Defaults to JSONDecoder
+    /// - Returns: The model that this Serializer decodes.
+    public static func decode<M>(
         data: Data,
         using decoder: JSONDecoder = JSONDecoder()
         ) throws -> M where M == Model {
         
+        return try decoder.decode(Self.self, from: data).model
+    }
+    
+    /// Decodes data with respect to the state of this Serializer.
+    ///
+    /// - Parameters:
+    ///   - data: Incoming data.
+    ///   - decoder: Optional decoder. Defaults to JSONDecoder
+    /// - Returns: The model that this Serializer decodes.
+    public func decode<M>(
+        data: Data,
+        using decoder: JSONDecoder = JSONDecoder()
+        ) throws -> M where M == Self.Model {
+
         guard let key = Self.deserializerInfoKey else {
             throw DecodingError.dataCorrupted(DecodingError.Context(
                 codingPath: [],
@@ -30,7 +51,10 @@ extension DecodeSerializer {
         }
         decoder.userInfo = [key: self]
         
-        return try decoder.decode(Self.self, from: data).model
+        return try Self.decode(
+            data: data,
+            using: decoder
+        )
     }
     
     /// Key for pulling a deserializer out of user info.
