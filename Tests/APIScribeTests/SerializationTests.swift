@@ -227,11 +227,9 @@ final class SerializationTests: XCTestCase {
             """.data(using: .utf8)!
         
         let existingPet = Pet(id: 4, type: .kitty, name: "Marla", age: 3, whiskers: true, adoptedAt: nil)
+        let serializer = existingPet.makeSerializer(in: nil)
+        let pet = try serializer.decode(data: json)
         
-        let decoder = JSONDecoder()
-        let key = CodingUserInfoKey(rawValue: "serialization.model")!
-        decoder.userInfo = [key: existingPet]
-        let pet = try decoder.decode(PetSerializer.self, from: json).model
         XCTAssertEqual(pet.id, 4)
         XCTAssertEqual(pet.name, "Marla")
         XCTAssertEqual(pet.type, .kitty)
@@ -250,10 +248,8 @@ final class SerializationTests: XCTestCase {
         let existingPet = Pet(id: 4, type: .kitty, name: "Marla", age: 3, whiskers: true, adoptedAt: Date())
         XCTAssertNotNil(existingPet.adoptedAt)
         
-        let decoder = JSONDecoder()
-        let key = CodingUserInfoKey(rawValue: "serialization.model")!
-        decoder.userInfo = [key: existingPet]
-        let pet = try decoder.decode(PetSerializer.self, from: json).model
+        let serializer = existingPet.makeSerializer(in: nil)
+        let pet = try serializer.decode(data: json)
         XCTAssertEqual(pet.id, 4)
         XCTAssertEqual(pet.name, "Marla")
         XCTAssertEqual(pet.type, .kitty)
@@ -329,13 +325,10 @@ final class SerializationTests: XCTestCase {
             }
             """.data(using: .utf8)!
         
-        let decoder = JSONDecoder()
         let deserializer = PetSerializer()
         deserializer.shouldDecodeAge = false
-        let key = CodingUserInfoKey(rawValue: "serialization.deserializer")!
-        decoder.userInfo = [key: deserializer]
         
-        let pet = try decoder.decode(PetSerializer.self, from: json).model
+        let pet = try deserializer.decode(data: json)
         XCTAssertEqual(pet.id, 77)
         XCTAssertEqual(pet.name, "June")
         XCTAssertEqual(pet.age, 0)

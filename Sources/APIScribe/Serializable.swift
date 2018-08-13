@@ -27,6 +27,7 @@ public protocol Serializable : SerializerProducer, ModelIdentifiable {
 }
 
 extension Serializable {
+    
     public func internalSerializer(in context: Context? = nil) -> ResourceSerializer {
         return makeSerializer(in: context)
     }

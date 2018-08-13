@@ -17,23 +17,27 @@ public protocol DecodeSerializer : Decodable, FieldMaker {
 
 extension DecodeSerializer {
     
+    public func decode<M>(
+        data: Data,
+        using decoder: JSONDecoder = JSONDecoder()
+        ) throws -> M where M == Model {
+        
+        guard let key = Self.deserializerInfoKey else {
+            throw DecodingError.dataCorrupted(DecodingError.Context(
+                codingPath: [],
+                debugDescription: "APIScribe: Could not produce deserializer info key")
+            )
+        }
+        decoder.userInfo = [key: self]
+        
+        return try decoder.decode(Self.self, from: data).model
+    }
+    
     /// Key for pulling a deserializer out of user info.
     /// Useful for when you want non-default values in the deserializer properties
     /// used during deserialization (which happens in the model's init).
-    public static var deserializerInfoKey: CodingUserInfoKey? {
-        return CodingUserInfoKey(rawValue: "serialization.deserializer")
-    }
-    
-    /// Key for pulling a model out of user info.
-    /// Useful for when you want to deserialize input over top of
-    /// an existing model.
-    public static var modelInfoKey: CodingUserInfoKey? {
-        return CodingUserInfoKey(rawValue: "serialization.model")
-    }
-    
-    /// Key for pulling a context out of user info.
-    public static var contextInfoKey: CodingUserInfoKey? {
-        return CodingUserInfoKey(rawValue: "serialization.context")
+    private static var deserializerInfoKey: CodingUserInfoKey? {
+        return CodingUserInfoKey(rawValue: "serialization.deserializer.primary")
     }
     
     /**
@@ -48,22 +52,6 @@ extension DecodeSerializer {
             let userInfoDeserializer = decoder.userInfo[key] as? Self {
             
             self = userInfoDeserializer
-        }
-        
-        if
-            let key = Self.modelInfoKey,
-            let model = decoder.userInfo[key] as? Model,
-            // This must be the top Storable in the tree in order to support update
-            decoder.codingPath.isEmpty {
-            
-            self.model = model
-        }
-        
-        if
-            let key = Self.contextInfoKey,
-            let context = decoder.userInfo[key] as? Context {
-            
-            self.context = context
         }
         
         let container = try decoder.container(keyedBy: DynamicKey.self)
