@@ -26,7 +26,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func field<Type: Codable>(
         _ key: String,
-        _ value: Type?,
+        _ value: @autoclosure () -> Type?,
         _ decoder: @escaping (Type) -> Void,
         shouldEncode: @autoclosure @escaping () -> Bool = true,
         shouldDecode: @autoclosure @escaping () -> Bool = true
@@ -36,7 +36,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         
         if var container = encodingContainer {
             if shouldEncode() {
-                try container.encode(value, forKey: codingKey)
+                try container.encode(value(), forKey: codingKey)
                 if !shouldDecode() {
                     readOnlyFields.append(key)
                 }
@@ -55,7 +55,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func readOnly<Type: Encodable>(
         _ key: String,
-        _ value: Type?,
+        _ value: @autoclosure () -> Type?,
         shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
@@ -63,7 +63,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         
         if var container = encodingContainer {
             if shouldEncode() {
-                try container.encode(value, forKey: codingKey)
+                try container.encode(value(), forKey: codingKey)
             }
         }
     }
@@ -132,13 +132,13 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func embeddedResource<Type: Serializable>(
         _ key: String,
-        _ value: Type?,
+        _ value: @autoclosure () -> Type?,
         _ decoder: @escaping (Type) -> Void,
         shouldEncode: @autoclosure @escaping () -> Bool = true,
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
-        let serializer = value?.makeSerializer(in: self.serializer.context)
+        let serializer = value()?.makeSerializer(in: self.serializer.context)
         try self.field(
             key,
             serializer,
@@ -150,7 +150,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func readOnlyEmbeddedResource<Type: Serializable>(
         _ key: String,
-        _ value: Type?,
+        _ value: @autoclosure () -> Type?,
         shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
