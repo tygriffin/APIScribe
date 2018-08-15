@@ -26,8 +26,8 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func field<Type: Codable>(
         _ key: String,
-        _ value: @autoclosure () -> Type?,
-        _ decoder: @escaping (Type) -> Void,
+        _ value: @autoclosure () throws -> Type?,
+        _ decoder: @escaping (Type) throws -> Void,
         shouldEncode: @autoclosure @escaping () -> Bool = true,
         shouldDecode: @autoclosure @escaping () -> Bool = true
     ) throws {
@@ -47,7 +47,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
             if shouldDecode() {
                 do {
                     let nextValue = try container.decode(Type.self, forKey: codingKey)
-                    decoder(nextValue)
+                    try decoder(nextValue)
                 } catch DecodingError.keyNotFound(_, _) {}
             }
         }
@@ -55,7 +55,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func readOnly<Type: Encodable>(
         _ key: String,
-        _ value: @autoclosure () -> Type?,
+        _ value: @autoclosure () throws -> Type?,
         shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
@@ -70,7 +70,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func writeOnly<Type: Decodable>(
         _ key: String,
-        _ decoder: @escaping (Type) -> Void,
+        _ decoder: @escaping (Type) throws -> Void,
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
@@ -80,7 +80,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
             if shouldDecode() {
                 do {
                     let nextValue = try container.decode(Type.self, forKey: codingKey)
-                    decoder(nextValue)
+                    try decoder(nextValue)
                 } catch DecodingError.keyNotFound(_, _) {}
             }
         }
@@ -132,17 +132,17 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func embeddedResource<Type: Serializable>(
         _ key: String,
-        _ value: @autoclosure () -> Type?,
-        _ decoder: @escaping (Type) -> Void,
+        _ value: @autoclosure () throws -> Type?,
+        _ decoder: @escaping (Type) throws -> Void,
         shouldEncode: @autoclosure @escaping () -> Bool = true,
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
-        let serializer = value()?.makeSerializer(in: self.serializer.context)
+        let serializer = try value()?.makeSerializer(in: self.serializer.context)
         try self.field(
             key,
             serializer,
-            { if let v = $0.model as? Type { decoder(v) } },
+            { if let v = $0.model as? Type { try decoder(v) } },
             shouldEncode: shouldEncode(),
             shouldDecode: shouldDecode()
         )
@@ -150,7 +150,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func readOnlyEmbeddedResource<Type: Serializable>(
         _ key: String,
-        _ value: @autoclosure () -> Type?,
+        _ value: @autoclosure () throws -> Type?,
         shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
@@ -165,7 +165,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func writeOnlyEmbeddedResource<S: DecodeSerializer & EncodeSerializer>(
         _ key: String,
-        _ decoder: @escaping (S.Model) -> Void,
+        _ decoder: @escaping (S.Model) throws -> Void,
         using deserializerType: S.Type,
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
@@ -176,7 +176,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         try self.field(
             key,
             deserializer,
-            { decoder($0.model) },
+            { try decoder($0.model) },
             shouldEncode: false,
             shouldDecode: shouldDecode()
         )
