@@ -138,7 +138,11 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
-        let serializer = try value()?.makeSerializer(in: self.serializer.context)
+        var serializer: Type.ModelSerializer? = nil
+        if shouldEncode() {
+            serializer = try value()?.makeSerializer(in: self.serializer.context)
+        }
+        
         try self.field(
             key,
             serializer,
