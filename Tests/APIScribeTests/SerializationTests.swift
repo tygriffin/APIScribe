@@ -267,23 +267,29 @@ final class SerializationTests: XCTestCase {
         let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
-        if let obj = obj as? [String: [String: [String: Any]]] {
-            XCTAssertEqual(obj.count, 2)
-            XCTAssertEqual(obj["kid"]?.count, 1)
-            XCTAssertEqual(obj["kid"]?["1"]?["name"] as? String, "Sara")
-            XCTAssertEqual(obj["pet"]?.count, 2)
-            XCTAssertEqual(obj["pet"]?["1"]?["name"] as? String, "Kathleen")
-            XCTAssertEqual(obj["pet"]?["1"]?["type"] as? String, "doggy")
-            XCTAssertEqual(obj["pet"]?["1"]?["whiskers"] as? Bool, true)
-            XCTAssertEqual(obj["pet"]?["1"]?["age"] as? Int, 11)
-            XCTAssertNil(obj["pet"]?["1"]?["adoptedAt"] as? NSNull)
-            XCTAssertEqual(obj["pet"]?["1"]?["id"] as? Int, 1)
-            XCTAssertEqual(obj["pet"]?["2"]?["name"] as? String, "Miso")
-            XCTAssertEqual(obj["pet"]?["2"]?["type"] as? String, "kitty")
-            XCTAssertEqual(obj["pet"]?["2"]?["whiskers"] as? Bool, true)
-            XCTAssertEqual(obj["pet"]?["2"]?["age"] as? Int, 43)
-            XCTAssertNotNil(obj["pet"]?["2"]?["adoptedAt"] as? NSNull)
-            XCTAssertEqual(obj["pet"]?["2"]?["id"] as? Int, 2)
+        if let obj = obj as? [String: Any] {
+            XCTAssertEqual(obj.count, 3)
+            
+            XCTAssertEqual(obj["_primary"] as! [String], ["kid", "1"])
+            
+            let kid = obj["kid"] as! [String: Any]
+            XCTAssertEqual(kid.count, 1)
+            XCTAssertEqual(kid.deepGet("1", "name") as? String, "Sara")
+            
+            let pet = obj["pet"] as! [String: Any]
+            XCTAssertEqual(pet.count, 2)
+            XCTAssertEqual(pet.deepGet("1", "name") as? String, "Kathleen")
+            XCTAssertEqual(pet.deepGet("1", "type") as? String, "doggy")
+            XCTAssertEqual(pet.deepGet("1", "whiskers") as? Bool, true)
+            XCTAssertEqual(pet.deepGet("1", "age") as? Int, 11)
+            XCTAssertNil(pet.deepGet("1", "adoptedAt") as? NSNull)
+            XCTAssertEqual(pet.deepGet("1", "id") as? Int, 1)
+            XCTAssertEqual(pet.deepGet("2", "name") as? String, "Miso")
+            XCTAssertEqual(pet.deepGet("2", "type") as? String, "kitty")
+            XCTAssertEqual(pet.deepGet("2", "whiskers") as? Bool, true)
+            XCTAssertEqual(pet.deepGet("2", "age") as? Int, 43)
+            XCTAssertNotNil(pet.deepGet("2", "adoptedAt") as? NSNull)
+            XCTAssertEqual(pet.deepGet("2", "id") as? Int, 2)
             
             let j = try JSONSerialization.data(withJSONObject: obj, options: .prettyPrinted)
             print(String.init(data: j, encoding: .utf8)!)
@@ -303,12 +309,17 @@ final class SerializationTests: XCTestCase {
         let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
-        if let obj = obj as? [String: [String: [String: Any]]] {
-            XCTAssertEqual(obj.count, 1)
-            XCTAssertEqual(obj["pet"]?.count, 1)
-            XCTAssertEqual(obj["pet"]?["88"]?["name"] as? String, "Jane")
-            XCTAssertEqual(obj["pet"]?["88"]?["type"] as? String, "kitty")
-            XCTAssertNil(obj["pet"]?["88"]?["age"]) // Age is not encoded because it is over 10
+        if let obj = obj as? [String: Any] {
+            
+            XCTAssertEqual(obj.count, 2)
+            
+            XCTAssertEqual(obj["_primary"] as! [String], ["pet", "88"])
+            
+            let pet = obj["pet"] as! [String: Any]
+            XCTAssertEqual(pet.count, 1)
+            XCTAssertEqual(pet.deepGet("88", "name") as? String, "Jane")
+            XCTAssertEqual(pet.deepGet("88", "type") as? String, "kitty")
+            XCTAssertNil(pet.deepGet("88", "age")) // Age is not encoded because it is over 10
             
         } else {
             XCTFail("Could not convert serialization to expected shape")
@@ -342,10 +353,10 @@ final class SerializationTests: XCTestCase {
         let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
-        if let obj = obj as? [String: [String: [String: Any]]] {
-            XCTAssertEqual(obj.count, 2)
-            XCTAssertEqual(obj["fruit"]?.count, 1)
-            XCTAssertEqual(obj["loop"]?.count, 1)
+        if let obj = obj as? [String: Any] {
+            XCTAssertEqual(obj.count, 3)
+            XCTAssertEqual((obj["fruit"] as! [String: Any]).count, 1)
+            XCTAssertEqual((obj["loop"] as! [String: Any]).count, 1)
         } else {
             XCTFail("Could not convert serialization to expected shape")
         }
@@ -386,10 +397,12 @@ final class SerializationTests: XCTestCase {
         let json = try jsonEncoder.encode(serializer)
         let obj = try json.toJSONObject()
         
-        if let obj = obj as? [String: [String: [String: Any]]] {
-            XCTAssertEqual(obj.count, 1)
-            XCTAssertEqual(obj["pet"]?.count, 1)
-            XCTAssertNil(obj["pet"]?["3"]?["whiskers"])
+        if let obj = obj as? [String: Any] {
+            XCTAssertEqual(obj.count, 2)
+            
+            let pet = obj["pet"] as! [String: Any]
+            XCTAssertEqual(pet.count, 1)
+            XCTAssertNil(pet.deepGet("3", "whiskers"))
             
         } else {
             XCTFail("Could not convert serialization to expected shape")

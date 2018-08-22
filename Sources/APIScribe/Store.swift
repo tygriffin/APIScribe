@@ -11,9 +11,12 @@
  Second level: model identifier (a unique primary key used to ensure models are not double serialized)
  Third level: the model to be serialized
  */
-typealias Store = [String: [String: Storable]]
+typealias Storage = [String: [String: Storable]]
 
-extension Dictionary where Key == String, Value == [String: Storable] {
+struct Store {
+    
+    var primary: (StoreIdIdentifiable & StoreKeyIdentifiable)?
+    var storage: Storage = [:]
     
     /**
      - Parameters:
@@ -21,7 +24,7 @@ extension Dictionary where Key == String, Value == [String: Storable] {
      - id: primary key of model
      */
     func isAlreadySerialized(key: String, id: String) -> Bool {
-        return self.contains { k, v in
+        return storage.contains { k, v in
             return k == key && v.contains(where: { _k, _ in _k == id })
         }
     }
@@ -33,13 +36,13 @@ extension Dictionary where Key == String, Value == [String: Storable] {
      */
     mutating func add(storable: Storable) {
         
-        if self.index(forKey: storable.storeKey) == nil {
+        if storage.index(forKey: storable.storeKey) == nil {
             var dict = Dictionary<String, Storable>()
             dict[storable.storeId] = storable
-            self[storable.storeKey] = dict
+            storage[storable.storeKey] = dict
         }
         else {
-            self[storable.storeKey]?[storable.storeId] = storable
+            storage[storable.storeKey]?[storable.storeId] = storable
         }
     }
     
@@ -69,7 +72,14 @@ extension Dictionary where Key == String, Value == [String: Storable] {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: DynamicKey.self)
         
-        for (name, dict) in self {
+        if let primary = primary {
+            try container.encode(
+                [primary.storeKey, primary.storeId],
+                forKey: DynamicKey(stringValue: "_primary")
+            )
+        }
+        
+        for (name, dict) in storage {
             var nested = container.nestedContainer(
                 keyedBy: DynamicKey.self,
                 forKey: DynamicKey(stringValue: name)

@@ -27,10 +27,10 @@ final class StoreTests: XCTestCase {
         var store = Store()
         XCTAssertFalse(store.isAlreadySerialized(key: "somekey", id: "someid"))
         
-        store["somekey"] = ["otherid": SomeStorable()]
+        store.storage["somekey"] = ["otherid": SomeStorable()]
         XCTAssertFalse(store.isAlreadySerialized(key: "somekey", id: "someid"))
         
-        store["somekey"] = ["someid": SomeStorable()]
+        store.storage["somekey"] = ["someid": SomeStorable()]
         XCTAssertTrue(store.isAlreadySerialized(key: "somekey", id: "someid"))
     }
     
@@ -42,7 +42,7 @@ final class StoreTests: XCTestCase {
             value: "One")
         )
         
-        if let storable = store["somekey"]?["idone"] as? SomeStorable {
+        if let storable = store.storage["somekey"]?["idone"] as? SomeStorable {
             XCTAssertEqual(storable.value, "One")
         } else {
             XCTFail("Storable not added")
@@ -54,34 +54,34 @@ final class StoreTests: XCTestCase {
             value: "Uno")
         )
         
-        if let storable = store["somekey"]?["idone"] as? SomeStorable {
+        if let storable = store.storage["somekey"]?["idone"] as? SomeStorable {
             XCTAssertEqual(storable.value, "Uno")
         } else {
             XCTFail("Storable not added")
         }
         
         // Adding a value to the same key, different id
-        XCTAssertEqual(store["somekey"]?.count, 1)
+        XCTAssertEqual(store.storage["somekey"]?.count, 1)
         store.add(storable: SomeStorable(
             storeId: "idtwo",
             value: "Two"))
         
-        XCTAssertEqual(store["somekey"]?.count, 2)
-        if let storable = store["somekey"]?["idtwo"] as? SomeStorable {
+        XCTAssertEqual(store.storage["somekey"]?.count, 2)
+        if let storable = store.storage["somekey"]?["idtwo"] as? SomeStorable {
             XCTAssertEqual(storable.value, "Two")
         } else {
             XCTFail("Storable not added")
         }
         
         // Adding a value to a different key
-        XCTAssertEqual(store.count, 1)
+        XCTAssertEqual(store.storage.count, 1)
         SomeStorable.storeKey = "differentkey"
         store.add(storable: SomeStorable(
             storeId: "idone",
             value: "Second key, first id"))
         
-        XCTAssertEqual(store.count, 2)
-        if let storable = store["differentkey"]?["idone"] as? SomeStorable {
+        XCTAssertEqual(store.storage.count, 2)
+        if let storable = store.storage["differentkey"]?["idone"] as? SomeStorable {
             XCTAssertEqual(storable.value, "Second key, first id")
         } else {
             XCTFail("Storable not added")
