@@ -81,8 +81,8 @@ final class KidSerializer : Serializer {
     func makeFields(builder b: inout FieldBuilder<KidSerializer>) throws {
         try b.field("name", \.name)
         try b.readOnly("age", \.age)
-        try b.readOnly("hobbies", \.hobbies, shouldEncode: self.shouldEncodeHobbies)
-        try b.writeOnly("nickName", \.nickName, shouldDecode: false)
+        try b.readOnly("hobbies", \.hobbies, encodeWhen: self.shouldEncodeHobbies)
+        try b.writeOnly("nickName", \.nickName, decodeWhen: false)
     }
     
     var shouldEncodeHobbies: Bool {
@@ -116,8 +116,8 @@ final class PetSerializer : Serializer {
         try b.writeOnly("writableField", { self.writableField = $0 })
         try b.readOnly("abilities", ["landsOnAllFours": model.landsOnAllFours])
         try b.field("name", \.name)
-        try b.field("age", \.age, shouldEncode: self.model.age > 10, shouldDecode: self.shouldDecodeAge)
-        try b.field("whiskers", \.whiskers, shouldEncode: self.includeWhiskers, shouldDecode: true)
+        try b.field("age", \.age, encodeWhen: self.model.age > 10, decodeWhen: self.shouldDecodeAge)
+        try b.field("whiskers", \.whiskers, encodeWhen: self.includeWhiskers, decodeWhen: true)
         try b.field("adoptedAt", \.adoptedAt)
         try b.embeddedResource("kid", self.kid, { self.kid = $0 })
         try b.writeOnlyEmbeddedResource("anotherKid", { self.anotherKid = $0 }, using: KidSerializer.self)

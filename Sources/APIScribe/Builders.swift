@@ -28,8 +28,8 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ key: String,
         _ value: @autoclosure () throws -> Type?,
         _ decoder: @escaping (Type) throws -> Void,
-        shouldEncode: @autoclosure @escaping () -> Bool = true,
-        shouldDecode: @autoclosure @escaping () -> Bool = true
+        encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true,
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
     ) throws {
         
         let codingKey = DynamicKey(stringValue: key)
@@ -56,7 +56,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     public func readOnly<Type: Encodable>(
         _ key: String,
         _ value: @autoclosure () throws -> Type?,
-        shouldEncode: @autoclosure @escaping () -> Bool = true
+        encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
         let codingKey = DynamicKey(stringValue: key)
@@ -71,7 +71,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     public func writeOnly<Type: Decodable>(
         _ key: String,
         _ decoder: @escaping (Type) throws -> Void,
-        shouldDecode: @autoclosure @escaping () -> Bool = true
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
         let codingKey = DynamicKey(stringValue: key)
@@ -91,40 +91,40 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     public func field<Type: Codable>(
         _ key: String,
         _ path: WritableKeyPath<S.Model,Type>,
-        shouldEncode: @autoclosure @escaping () -> Bool = true,
-        shouldDecode: @autoclosure @escaping () -> Bool = true
+        encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true,
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
     ) throws {
         try self.field(
             key,
             serializer.model[keyPath: path],
             { self.serializer.model[keyPath: path] = $0 },
-            shouldEncode: shouldEncode,
-            shouldDecode: shouldDecode
+            encodeWhen: shouldEncode,
+            decodeWhen: shouldDecode
         )
     }
     
     public func readOnly<Type: Encodable>(
         _ key: String,
         _ path: KeyPath<S.Model,Type>,
-        shouldEncode: @autoclosure @escaping () -> Bool = true
+        encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
         try self.readOnly(
             key,
             serializer.model[keyPath: path],
-            shouldEncode: shouldEncode
+            encodeWhen: shouldEncode
         )
     }
     
     public func writeOnly<Type: Decodable>(
         _ key: String,
         _ path: WritableKeyPath<S.Model,Type>,
-        shouldDecode: @autoclosure @escaping () -> Bool = true
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
         try self.writeOnly(
             key,
             { self.serializer.model[keyPath: path] = $0 },
-            shouldDecode: shouldDecode
+            decodeWhen: shouldDecode
         )
     }
     
@@ -134,8 +134,8 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ key: String,
         _ value: @autoclosure () throws -> Type?,
         _ decoder: @escaping (Type) throws -> Void,
-        shouldEncode: @autoclosure @escaping () -> Bool = true,
-        shouldDecode: @autoclosure @escaping () -> Bool = true
+        encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true,
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
         var serializer: Type.ModelSerializer? = nil
@@ -147,23 +147,23 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
             key,
             serializer,
             { if let v = $0.model as? Type { try decoder(v) } },
-            shouldEncode: shouldEncode(),
-            shouldDecode: shouldDecode()
+            encodeWhen: shouldEncode(),
+            decodeWhen: shouldDecode()
         )
     }
     
     public func readOnlyEmbeddedResource<Type: Serializable>(
         _ key: String,
         _ value: @autoclosure () throws -> Type?,
-        shouldEncode: @autoclosure @escaping () -> Bool = true
+        encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
         try self.embeddedResource(
             key,
             value,
             { _ in },
-            shouldEncode: shouldEncode(),
-            shouldDecode: false
+            encodeWhen: shouldEncode(),
+            decodeWhen: false
         )
     }
     
@@ -171,7 +171,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ key: String,
         _ decoder: @escaping (S.Model) throws -> Void,
         using deserializerType: S.Type,
-        shouldDecode: @autoclosure @escaping () -> Bool = true
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
 
         var deserializer = deserializerType.init()
@@ -181,8 +181,8 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
             key,
             deserializer,
             { try decoder($0.model) },
-            shouldEncode: false,
-            shouldDecode: shouldDecode()
+            encodeWhen: false,
+            decodeWhen: shouldDecode()
         )
     }
 }
