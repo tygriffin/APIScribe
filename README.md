@@ -39,10 +39,9 @@ final class KidSerializer : Serializer {
         try b.field("name", \.name)
     }
     
-    static var type = "kid"
+    static var storeKey = "kid"
     var model = Kid()
     var context: Context?
-    var storeId = \Kid.storeId
 }
 
 final class PetSerializer : Serializer {
@@ -50,13 +49,12 @@ final class PetSerializer : Serializer {
     func makeFields(builder b: inout FieldBuilder<PetSerializer>) throws {
         try b.field("id", \.id)
         try b.field("name", \.name)
-        try b.readOnly("age", \.age, shouldEncode: self.model.age > 10)
+        try b.readOnly("age", \.age, encodeWhen: self.model.age > 10)
     }
     
-    static var type = "pet"
+    static var storeKey = "pet"
     var model = Pet()
     var context: Context?
-    var storeId = \Pet.storeId
 }
 ```
 
