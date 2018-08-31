@@ -26,7 +26,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
     
     public func field<Type: Codable>(
         _ key: String,
-        _ value: @autoclosure () throws -> Type?,
+        _ value: @autoclosure () throws -> Type,
         _ decoder: @escaping (Type) throws -> Void,
         encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true,
         decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
@@ -48,14 +48,15 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
                 do {
                     let nextValue = try container.decode(Type.self, forKey: codingKey)
                     try decoder(nextValue)
-                } catch DecodingError.keyNotFound(_, _) {}
+                } catch DecodingError.keyNotFound(_, _) {
+                }
             }
         }
     }
     
     public func readOnly<Type: Encodable>(
         _ key: String,
-        _ value: @autoclosure () throws -> Type?,
+        _ value: @autoclosure () throws -> Type,
         encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true
         ) throws {
         
@@ -138,15 +139,10 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws where Type.ModelSerializer: EncodeSerializer & DecodeSerializer {
         
-        var serializer: Type.ModelSerializer? = nil
-        if shouldEncode() {
-            serializer = try value()?.makeSerializer(in: self.serializer.context)
-        }
-        
         try self.field(
             key,
-            serializer,
-            { if let v = $0.model as? Type { try decoder(v) } },
+            try value()?.makeSerializer(in: self.serializer.context),
+            { if let v = $0?.model as? Type { try decoder(v) } },
             encodeWhen: shouldEncode(),
             decodeWhen: shouldDecode()
         )

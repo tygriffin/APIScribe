@@ -119,6 +119,7 @@ final class PetSerializer : Serializer {
         try b.field("age", \.age, encodeWhen: self.model.age > 10, decodeWhen: self.shouldDecodeAge)
         try b.field("whiskers", \.whiskers, encodeWhen: self.includeWhiskers, decodeWhen: true)
         try b.field("adoptedAt", \.adoptedAt)
+        
         try b.embeddedResource("kid", self.kid, { self.kid = $0 })
         try b.writeOnlyEmbeddedResource("anotherKid", { self.anotherKid = $0 }, using: KidSerializer.self)
     }
@@ -290,10 +291,6 @@ final class SerializationTests: XCTestCase {
             XCTAssertEqual(pet.deepGet("2", "age") as? Int, 43)
             XCTAssertNotNil(pet.deepGet("2", "adoptedAt") as? NSNull)
             XCTAssertEqual(pet.deepGet("2", "id") as? Int, 2)
-            
-            let j = try JSONSerialization.data(withJSONObject: obj, options: .prettyPrinted)
-            print(String.init(data: j, encoding: .utf8)!)
-            
             
         } else {
             XCTFail("Could not convert serialization to expected shape")
@@ -498,6 +495,73 @@ final class SerializationTests: XCTestCase {
         XCTAssertEqual(serializer.model.nickName, "")
     }
     
+    func testNullify() throws {
+        struct Thing: Serializable {
+            func makeSerializer(in context: Context?) -> ThingSerializer {
+                return ThingSerializer(model: self, in: context)
+            }
+            
+            var optionaldate: Date?
+            var somedate = Date()
+            var someint = 0
+            
+            var storeId: String { return "1" }
+        }
+        
+        final class ThingSerializer: Serializer {
+            func makeFields(builder b: inout FieldBuilder<ThingSerializer>) throws {
+                try b.field("optionaldate", model.optionaldate, { self.model.optionaldate = $0 })
+                try b.field("somedate", \.somedate)
+                try b.writeOnly("someint", \.someint)
+            }
+            
+            var context: Context?
+            var model = Thing()
+            static var storeKey = "thing"
+            init() {}
+        }
+        
+        var json = """
+            {
+                "someint": 4
+            }
+            """.data(using: .utf8)!
+        
+        var t = Thing(optionaldate: Date(), somedate: Date(), someint: 2)
+        XCTAssertNotNil(t.optionaldate)
+        
+        var serializer = t.makeSerializer(in: nil)
+        var thing = try serializer.decode(data: json)
+        XCTAssertEqual(thing.someint, 4) // Decode successful
+        XCTAssertNotNil(thing.optionaldate) // Optional date is untouched
+        
+        json = """
+            {
+                "optionaldate": null
+            }
+            """.data(using: .utf8)!
+        
+        t = Thing(optionaldate: Date(), somedate: Date(), someint: 2)
+        XCTAssertNotNil(t.optionaldate)
+        
+        serializer = t.makeSerializer(in: nil)
+        thing = try serializer.decode(data: json)
+        XCTAssertNil(thing.optionaldate) // Nullified
+        
+        json = """
+            {
+                "somedate": null
+            }
+            """.data(using: .utf8)!
+        
+        t = Thing(optionaldate: Date(), somedate: Date(),  someint: 2)
+        XCTAssertNotNil(t.optionaldate)
+        
+        serializer = t.makeSerializer(in: nil)
+        XCTAssertThrowsError(try serializer.decode(data: json))
+        
+    }
+    
     private func pretty(_ data: Data) throws {
         print(try data.prettyJSONString())
     }
@@ -517,5 +581,6 @@ final class SerializationTests: XCTestCase {
         ("testWriteOnlyEmbeddedResource", testWriteOnlyEmbeddedResource),
         ("testContextIsPassedToEmbeddedResources", testContextIsPassedToEmbeddedResources),
         ("testReadOnlyWritableKeyPath", testReadOnlyWritableKeyPath),
+        ("testNullify", testNullify),
     ]
 }
