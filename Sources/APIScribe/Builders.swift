@@ -193,9 +193,15 @@ public struct SideLoadedResourceBuilder {
         resources.append(Resource(resource))
     }
     
+    mutating public func add(_ resource: SerializerProducer?) {
+        if let resource = resource {
+            self.add(resource)
+        }
+    }
+    
     mutating public func add(_ _resources: [SerializerProducer]) {
         for resource in _resources {
-            resources.append(Resource(resource))
+            self.add(resource)
         }
     }
 }
