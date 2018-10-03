@@ -504,6 +504,7 @@ final class SerializationTests: XCTestCase {
             var optionaldate: Date?
             var somedate = Date()
             var someint = 0
+            var somestring = ""
             
             var storeId: String { return "1" }
         }
@@ -513,6 +514,7 @@ final class SerializationTests: XCTestCase {
                 try b.field("optionaldate", model.optionaldate, { self.model.optionaldate = $0 })
                 try b.field("somedate", \.somedate)
                 try b.writeOnly("someint", \.someint)
+                try b.field("somestring", \.somestring)
             }
             
             var context: Context?
@@ -526,40 +528,65 @@ final class SerializationTests: XCTestCase {
                 "someint": 4
             }
             """.data(using: .utf8)!
-        
-        var t = Thing(optionaldate: Date(), somedate: Date(), someint: 2)
+
+        var t = Thing(optionaldate: Date(), somedate: Date(), someint: 2, somestring: "")
         XCTAssertNotNil(t.optionaldate)
-        
+
         var serializer = t.makeSerializer(in: nil)
         var thing = try serializer.decode(data: json)
         XCTAssertEqual(thing.someint, 4) // Decode successful
         XCTAssertNotNil(thing.optionaldate) // Optional date is untouched
-        
+
         json = """
             {
                 "optionaldate": null
             }
             """.data(using: .utf8)!
-        
-        t = Thing(optionaldate: Date(), somedate: Date(), someint: 2)
+
+        t = Thing(optionaldate: Date(), somedate: Date(), someint: 2, somestring: "")
         XCTAssertNotNil(t.optionaldate)
-        
+
         serializer = t.makeSerializer(in: nil)
         thing = try serializer.decode(data: json)
         XCTAssertNil(thing.optionaldate) // Nullified
-        
+
         json = """
             {
                 "somedate": null
             }
             """.data(using: .utf8)!
-        
-        t = Thing(optionaldate: Date(), somedate: Date(),  someint: 2)
+
+        t = Thing(optionaldate: Date(), somedate: Date(),  someint: 2, somestring: "")
         XCTAssertNotNil(t.optionaldate)
+
+        serializer = t.makeSerializer(in: nil)
+        XCTAssertNoThrow(try serializer.decode(data: json))
+
+        json = """
+            {
+                "someint": null
+            }
+            """.data(using: .utf8)!
+        
+        t = Thing(optionaldate: Date(), somedate: Date(), someint: 2, somestring: "not empty")
+        XCTAssertNotNil(t.someint)
         
         serializer = t.makeSerializer(in: nil)
-        XCTAssertThrowsError(try serializer.decode(data: json))
+        XCTAssertNoThrow(try serializer.decode(data: json))
+        XCTAssertEqual(serializer.model.someint, 0)
         
+        json = """
+            {
+                "somestring": null
+            }
+            """.data(using: .utf8)!
+        
+        t = Thing(optionaldate: Date(), somedate: Date(), someint: 2, somestring: "not empty")
+        XCTAssertNotNil(t.somestring)
+        
+        serializer = t.makeSerializer(in: nil)
+        XCTAssertNoThrow(try serializer.decode(data: json))
+        XCTAssertEqual(serializer.model.somestring, "")
     }
     
     private func pretty(_ data: Data) throws {

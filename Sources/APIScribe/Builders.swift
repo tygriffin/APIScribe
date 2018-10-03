@@ -43,38 +43,8 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
             }
         }
         
-        if let container = decodingContainer {
-            if shouldDecode() {
-                do {
-                    let nextValue = try container.decode(Type.self, forKey: codingKey)
-                    try decoder(nextValue)
-                } catch DecodingError.keyNotFound(_, _) {
-                } catch DecodingError.valueNotFound(let type, let context) {
-                    guard try container.decodeNil(forKey: codingKey) else {
-                        throw DecodingError.valueNotFound(type, context)
-                    }
-                    
-                    if Type.self == String.self {
-                        try decoder("" as! Type)
-                    }
-                    else if
-                        Type.self == Double.self ||
-                            Type.self == Float.self ||
-                            Type.self == Int.self ||
-                            Type.self == Int8.self ||
-                            Type.self == Int16.self ||
-                            Type.self == Int32.self ||
-                            Type.self == Int64.self ||
-                            Type.self == UInt.self ||
-                            Type.self == UInt8.self ||
-                            Type.self == UInt16.self ||
-                            Type.self == UInt32.self ||
-                            Type.self == UInt64.self {
-                        try decoder(0 as! Type)
-                    }
-                }
-            }
-        }
+        try coerceDecode(decoder, codingKey: codingKey, decodeWhen: shouldDecode)
+        
     }
     
     public func readOnly<Type: Encodable>(
@@ -100,14 +70,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         
         let codingKey = DynamicKey(stringValue: key)
         
-        if let container = decodingContainer {
-            if shouldDecode() {
-                do {
-                    let nextValue = try container.decode(Type.self, forKey: codingKey)
-                    try decoder(nextValue)
-                } catch DecodingError.keyNotFound(_, _) {}
-            }
-        }
+        try coerceDecode(decoder, codingKey: codingKey, decodeWhen: shouldDecode)
     }
     
     // MARK: KeyPath conveniences
@@ -203,6 +166,58 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
             encodeWhen: false,
             decodeWhen: shouldDecode()
         )
+    }
+    
+    private func coerceDecode<Type: Decodable>(
+        _ decoder: @escaping (Type) throws -> Void,
+        codingKey: DynamicKey,
+        decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
+        ) throws {
+        
+        if let container = decodingContainer {
+            if shouldDecode() {
+                do {
+                    let nextValue = try container.decode(Type.self, forKey: codingKey)
+                    try decoder(nextValue)
+                } catch DecodingError.keyNotFound(let x, _) {
+                    print(x)
+                    // Always accept a partial incoming model
+                } catch DecodingError.valueNotFound(let type, let context) {
+                    // If value was not found because the target is non-optional and
+                    // the incoming value is null, we can interpret the behavior based
+                    // on the target data type. However, if the incoming value is not
+                    // null, rethrow.
+                    guard try container.decodeNil(forKey: codingKey) else {
+                        throw DecodingError.valueNotFound(type, context)
+                    }
+                    
+                    // Emptying a string means decoding to ""
+                    if Type.self == String.self {
+                        try decoder("" as! Type)
+                    }
+                    // Emptying a number-like type means decoding to 0
+                    else if
+                        Type.self == Double.self ||
+                            Type.self == Float.self ||
+                            Type.self == Int.self ||
+                            Type.self == Int8.self ||
+                            Type.self == Int16.self ||
+                            Type.self == Int32.self ||
+                            Type.self == Int64.self ||
+                            Type.self == UInt.self ||
+                            Type.self == UInt8.self ||
+                            Type.self == UInt16.self ||
+                            Type.self == UInt32.self ||
+                            Type.self == UInt64.self {
+                        
+                        try decoder(0 as! Type)
+                    }
+                    
+                    // All other target data types simply ignore the incoming
+                    // null
+                }
+            }
+        }
     }
 }
 
