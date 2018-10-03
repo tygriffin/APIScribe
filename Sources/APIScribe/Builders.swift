@@ -30,7 +30,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ decoder: @escaping (Type) throws -> Void,
         encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true,
         decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
-    ) throws {
+        ) throws {
         
         let codingKey = DynamicKey(stringValue: key)
         
@@ -49,6 +49,29 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
                     let nextValue = try container.decode(Type.self, forKey: codingKey)
                     try decoder(nextValue)
                 } catch DecodingError.keyNotFound(_, _) {
+                } catch DecodingError.valueNotFound(let type, let context) {
+                    guard try container.decodeNil(forKey: codingKey) else {
+                        throw DecodingError.valueNotFound(type, context)
+                    }
+                    
+                    if Type.self == String.self {
+                        try decoder("" as! Type)
+                    }
+                    else if
+                        Type.self == Double.self ||
+                            Type.self == Float.self ||
+                            Type.self == Int.self ||
+                            Type.self == Int8.self ||
+                            Type.self == Int16.self ||
+                            Type.self == Int32.self ||
+                            Type.self == Int64.self ||
+                            Type.self == UInt.self ||
+                            Type.self == UInt8.self ||
+                            Type.self == UInt16.self ||
+                            Type.self == UInt32.self ||
+                            Type.self == UInt64.self {
+                        try decoder(0 as! Type)
+                    }
                 }
             }
         }
