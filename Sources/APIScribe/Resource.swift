@@ -10,11 +10,14 @@
  be included in the output Store.
  */
 struct Resource {
-    var value: SerializerProducer
+    var value: SerializerProducer?
+    var serializer: ResourceSerializer?
     
-    var shouldEncode = true
-    
-    init(_ value: SerializerProducer) {
+    init(resource value: SerializerProducer) {
         self.value = value
+    }
+    
+    init(resourceSerializer serializer: ResourceSerializer) {
+        self.serializer = serializer
     }
 }

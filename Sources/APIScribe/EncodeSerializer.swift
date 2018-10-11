@@ -27,7 +27,7 @@ extension EncodeSerializer {
         if encoder.codingPath.isEmpty {
             try encodeAsPrimary(to: encoder)
         }
-            // ... otherwise, this is a leaf in a serialization started by another serializer.
+        // ... otherwise, this is a leaf in a serialization started by another serializer.
         else {
             try encodeAsLeaf(to: encoder)
         }
