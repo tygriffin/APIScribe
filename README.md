@@ -1,6 +1,6 @@
 # API Scribe
 
-Very opinionated API serialization library.
+Very opinionated API serialization library for Swift.
 
 Assuming you had a couple models like this:
 
