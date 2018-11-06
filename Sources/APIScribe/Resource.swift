@@ -10,14 +10,30 @@
  be included in the output Store.
  */
 struct Resource {
-    var value: SerializerProducer?
-    var serializer: ResourceSerializer?
+    private var serializerProducer: SerializerProducer?
+    private var resourceSerializer: ResourceSerializer?
     
     init(resource value: SerializerProducer) {
-        self.value = value
+        self.serializerProducer = value
     }
     
     init(resourceSerializer serializer: ResourceSerializer) {
-        self.serializer = serializer
+        self.resourceSerializer = serializer
+    }
+    
+    public func serializer(in context: Context? = nil) throws -> ResourceSerializer {
+        var result: ResourceSerializer?
+        
+        if let producer = serializerProducer {
+            result = producer.internalSerializer(in: context)
+        }
+        if var serializer = resourceSerializer {
+            serializer.context = serializer.context ?? context
+            result = serializer
+        }
+        
+        // Impossible to nil because this struct must be initialized with
+        // either a SerializerProducer or ResourceSerializer.
+        return result!
     }
 }

@@ -57,9 +57,7 @@ struct Store {
         try serializer.sideLoadResources(builder: &builder)
         
         for resource in builder.resources {
-            var resourceSerializer = resource.serializer
-            if (ResourceSerializer)?? resource.value.internalSerializer(in: serializer.context)
-            
+            let resourceSerializer = try resource.serializer(in: serializer.context)
             
             if !self.isAlreadySerialized(
                 key: resourceSerializer.storeKey,

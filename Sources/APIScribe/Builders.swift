@@ -227,35 +227,39 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
 public struct SideLoadedResourceBuilder {
     var resources: [Resource] = []
     
-    mutating public func add(resource: SerializerProducer) {
-        resources.append(Resource(resource: resource))
-    }
-    
-    mutating public func add(resource: SerializerProducer?) {
+    mutating public func add(_ resource: SerializerProducer?) {
         if let resource = resource {
-            self.add(resource: resource)
+            self.add(resource)
         }
     }
     
-    mutating public func add(resources: [SerializerProducer]) {
+    mutating public func add(_ resources: [SerializerProducer]) {
         for resource in resources {
-            self.add(resource: resource)
+            self.add(resource)
         }
     }
     
-//    mutating public func add(resourceSerializer: ResourceSerializer) {
-//        resources.append(Resource)
-//    }
-//    
-//    mutating public func add(_ resource: SerializerProducer?) {
-//        if let resource = resource {
-//            self.add(resource)
-//        }
-//    }
-//    
-//    mutating public func add(_ _resources: [SerializerProducer]) {
-//        for resource in _resources {
-//            self.add(resource)
-//        }
-//    }
+    mutating public func add(_ resources: SerializerProducer...) {
+        for resource in resources {
+            self.resources.append(Resource(resource: resource))
+        }
+    }
+    
+    mutating public func add(_ serializer: ResourceSerializer?) {
+        if let serializer = serializer {
+            self.add(serializer)
+        }
+    }
+    
+    mutating public func add(_ serializers: [ResourceSerializer]) {
+        for serializer in serializers {
+            self.add(serializer)
+        }
+    }
+    
+    mutating public func add(_ serializers: ResourceSerializer...) {
+        for serializer in serializers {
+            resources.append(Resource(resourceSerializer: serializer))
+        }
+    }
 }
