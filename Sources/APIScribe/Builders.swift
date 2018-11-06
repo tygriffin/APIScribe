@@ -80,7 +80,7 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         _ path: WritableKeyPath<S.Model,Type>,
         encodeWhen shouldEncode: @autoclosure @escaping () -> Bool = true,
         decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
-    ) throws {
+        ) throws {
         try self.field(
             key,
             serializer.model[keyPath: path],
@@ -155,10 +155,10 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
         using deserializerType: S.Type,
         decodeWhen shouldDecode: @autoclosure @escaping () -> Bool = true
         ) throws {
-
+        
         var deserializer = deserializerType.init()
         deserializer.context = self.serializer.context
-
+        
         try self.field(
             key,
             deserializer,
@@ -227,19 +227,39 @@ public class FieldBuilder<S: ModelHolder & ContextHolder> {
 public struct SideLoadedResourceBuilder {
     var resources: [Resource] = []
     
-    mutating public func add(_ resource: SerializerProducer) {
-        resources.append(Resource(resource))
-    }
-    
     mutating public func add(_ resource: SerializerProducer?) {
         if let resource = resource {
             self.add(resource)
         }
     }
     
-    mutating public func add(_ _resources: [SerializerProducer]) {
-        for resource in _resources {
+    mutating public func add(_ resources: [SerializerProducer]) {
+        for resource in resources {
             self.add(resource)
+        }
+    }
+    
+    mutating public func add(_ resources: SerializerProducer...) {
+        for resource in resources {
+            self.resources.append(Resource(resource: resource))
+        }
+    }
+    
+    mutating public func add(_ serializer: ResourceSerializer?) {
+        if let serializer = serializer {
+            self.add(serializer)
+        }
+    }
+    
+    mutating public func add(_ serializers: [ResourceSerializer]) {
+        for serializer in serializers {
+            self.add(serializer)
+        }
+    }
+    
+    mutating public func add(_ serializers: ResourceSerializer...) {
+        for serializer in serializers {
+            resources.append(Resource(resourceSerializer: serializer))
         }
     }
 }

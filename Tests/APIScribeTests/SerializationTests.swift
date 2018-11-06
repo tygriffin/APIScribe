@@ -68,6 +68,42 @@ extension Pet : Serializable {
     }
 }
 
+enum FunLevel : String, Codable {
+    case extreme
+    case notBad
+    case meh
+}
+
+struct Toy {
+    var id: Int = -1
+    var name = ""
+    var funLevel: FunLevel = .notBad
+}
+
+extension Toy : Serializable {
+    func makeSerializer(in context: Context? = nil) -> ToySerializer {
+        return ToySerializer(model: self, in: context)
+    }
+    
+    var storeId: String { return "\(id)" }
+}
+
+struct ToySerializer : Serializer {
+    
+    var includeFunLevel = false
+    
+    func makeFields(builder b: inout FieldBuilder<ToySerializer>) throws {
+        try b.field("name", \.name)
+        if includeFunLevel {
+            try b.readOnly("funLevel", \.funLevel)
+        }
+    }
+    
+    static var storeKey = "toy"
+    var model = Toy()
+    var context: Context?
+}
+
 
 //
 // Serializers
@@ -76,6 +112,11 @@ final class KidSerializer : Serializer {
 
     func sideLoadResources(builder b: inout SideLoadedResourceBuilder) {
         b.add(model.pets())
+        
+        let toy = Toy(id: 2, name: "Truck", funLevel: .extreme)
+        var toySerializer = toy.makeSerializer()
+        toySerializer.includeFunLevel = true
+        b.add(toySerializer)
     }
     
     func makeFields(builder b: inout FieldBuilder<KidSerializer>) throws {
@@ -269,7 +310,7 @@ final class SerializationTests: XCTestCase {
         let obj = try json.toJSONObject()
         
         if let obj = obj as? [String: Any] {
-            XCTAssertEqual(obj.count, 3)
+            XCTAssertEqual(obj.count, 4)
             
             XCTAssertEqual(obj["_primary"] as! [String], ["kid", "1"])
             
@@ -291,6 +332,12 @@ final class SerializationTests: XCTestCase {
             XCTAssertEqual(pet.deepGet("2", "age") as? Int, 43)
             XCTAssertNotNil(pet.deepGet("2", "adoptedAt") as? NSNull)
             XCTAssertEqual(pet.deepGet("2", "id") as? Int, 2)
+            
+            // Test side-loaded resource with serializer specified
+            let toy = obj["toy"] as! [String: Any]
+            XCTAssertEqual(toy.count, 1)
+            XCTAssertEqual(toy.deepGet("2", "name") as? String, "Truck")
+            XCTAssertEqual(toy.deepGet("2", "funLevel") as? String, "extreme")
             
         } else {
             XCTFail("Could not convert serialization to expected shape")
