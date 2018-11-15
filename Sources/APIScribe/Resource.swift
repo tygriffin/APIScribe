@@ -28,7 +28,9 @@ struct Resource {
             result = producer.internalSerializer(in: context)
         }
         if var serializer = resourceSerializer {
-            serializer.context = serializer.context ?? context
+            if serializer.context == nil {
+                serializer.context = context
+            }
             result = serializer
         }
         
